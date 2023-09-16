@@ -15,6 +15,11 @@ body {
     height: 100svh;
 }
 
+#frequencyLabel {
+    display: inline-block;
+    width: 5em;
+}
+
 input[type="range"] {
     width: 60%;
 }
@@ -34,4 +39,10 @@ button {
     align-items: center;
     justify-content: center;
     z-index: -1;
+}
+
+.frequency_info {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
 }

@@ -3,65 +3,103 @@ const playButton = document.getElementById("playButton");
 const stopButton = document.getElementById("stopButton");
 const frequencyLabel = document.getElementById("frequencyLabel");
 
-let audioInitializated = false;
+let audioAllowed = false;
 
 class WaveGenerator {
-	ATTACK_TIME = 0.01;
-	RELEASE_TIME = 0.1
+	// Constants
+	get ATTACK_TIME () { return 0.01; }
+	get RELEASE_TIME () { return 0.1; }
+
 	constructor(){
 		// Initialize the AudioContext
 		this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-		// Create a gain node
-		this.gainNode = this.audioContext.createGain();
-		// Connect the gain node to the audio output
-		this.gainNode.connect(this.audioContext.destination);
+		this.globalVolume = volumeSlider.value;
 
-		// Create an oscillator node
-		this.oscillator = this.audioContext.createOscillator();
-		// Connect the oscillator to the gain node
-		this.oscillator.connect(this.gainNode);
+		// Global volume control
+		this.globalGain = this.audioContext.createGain();
+		this.globalGain.connect(this.audioContext.destination);
 
-		this.volume = volumeSlider.value;
+		this.activeOscillators = 0;
+
+		this.oscillators = new Array();
 	}
 
 	initAudio(oscillatorId){
-		if (this.audioInitializated) return;
-		this.audioInitializated = true;
+		if (this.oscillators[oscillatorId]) return;
+
+		// Create a gain node
+		const gainNode = this.audioContext.createGain();
+		// Connect the gain node to the audio output
+		gainNode.connect(this.globalGain);
+
+		// Create an oscillator node
+		const oscillatorNode = this.audioContext.createOscillator();
+		// Connect the oscillator to the gain node
+		oscillatorNode.connect(gainNode);
+
+		this.oscillators[oscillatorId] = {
+			gain: gainNode,
+			oscillator: oscillatorNode
+		};
 
 		// Set initial oscillator frequency
-		this.setFrequency(getFrequency());
-		this.oscillator.start();
-		this.gainNode.gain.value = 0;
+		this.setFrequency(getFrequency(0.5), oscillatorNode);
+		oscillatorNode.start();
+		gainNode.gain.value = 0;
+	}
+
+	isAudioInitializated(oscillatorId){
+		return !!this.oscillators[oscillatorId];
 	}
 
 	// Function to play the wave
 	playWave(oscillatorId) {
-		if (!this.audioInitializated) return;
+		const entry = this.oscillators[oscillatorId];
+		if (!entry) return;
+		if (entry.gain.gain.value === 1) return;
+
+		const gainNode = entry.gain;
 
 		// Gradually decrease the gain to 1
-		this.gainNode.gain.cancelAndHoldAtTime(this.audioContext.currentTime);
-		this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, this.audioContext.currentTime);
-		this.gainNode.gain.linearRampToValueAtTime(this.volume, this.audioContext.currentTime + this.ATTACK_TIME);
+		gainNode.gain.cancelAndHoldAtTime(this.audioContext.currentTime);
+		gainNode.gain.setValueAtTime(gainNode.gain.value, this.audioContext.currentTime);
+		gainNode.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.ATTACK_TIME);
+		this.activeOscillators ++;
+		// Adjust volume
+		this.#adjustVolume();
 	}
 
 	// Function to stop the wave
 	stopWave(oscillatorId) {
-		if (!this.audioInitializated) return;
+		const entry = this.oscillators[oscillatorId];
+		if (!entry) return;
+		if (entry.gain.gain.value === 0) return;
+
+		const gainNode = entry.gain;
 
 		// Gradually decrease the gain to 0
-		this.gainNode.gain.cancelAndHoldAtTime(this.audioContext.currentTime);
-		this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, this.audioContext.currentTime);
-		this.gainNode.gain.linearRampToValueAtTime(0.0, this.audioContext.currentTime + this.RELEASE_TIME);
+		gainNode.gain.cancelAndHoldAtTime(this.audioContext.currentTime);
+		gainNode.gain.setValueAtTime(gainNode.gain.value, this.audioContext.currentTime);
+		gainNode.gain.linearRampToValueAtTime(0.0, this.audioContext.currentTime + this.RELEASE_TIME);
+		this.activeOscillators = Math.max(0, this.activeOscillators - 1);
+		// Adjust volume
+		this.#adjustVolume();
 	}
 
-	setFrequency(frequency){
-		if (!this.audioInitializated) return;
-		this.oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+	setFrequency(frequency, oscillatorId){
+		if (!this.oscillators[oscillatorId]) return;
+		const oscillatorNode = this.oscillators[oscillatorId].oscillator;
+		oscillatorNode.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
 	}
 
 	setVolume(vol){
-		this.volume = vol;
+		this.globalVolume = vol;
+		this.globalGain.gain.setValueAtTime(vol / Math.max(1, this.activeOscillators), this.audioContext.currentTime);
+	}
+
+	#adjustVolume(){
+		this.globalGain.gain.setValueAtTime(this.globalVolume / Math.max(1, this.activeOscillators), this.audioContext.currentTime);
 	}
 }
 
@@ -124,51 +162,69 @@ class Cursor {
 	}
 }
 
-self.mouse = new Cursor();
-
+const mouse = new Cursor();
 
 const waveGen = new WaveGenerator();
 
 // Mouse events ==============
 // Mouse DOWN
 frequency_picker.addEventListener("mousedown", () => {
-	if (!waveGen.audioInitializated) waveGen.initAudio();
-	waveGen.playWave();
+	if (!waveGen.isAudioInitializated(0)) waveGen.initAudio(0);
+	waveGen.playWave(0);
+	audioAllowed = true;
 });
 
 // Mouse MOVE
-frequency_picker.addEventListener("mousemove", () => {
-	const frequency = getFrequency();
-	waveGen.setFrequency(frequency);
+frequency_picker.addEventListener("mousemove", (e) => {
+	const frequency = getFrequency(mouse.normX);
+	waveGen.setFrequency(frequency, 0);
 	frequencyLabel.innerHTML = frequency;
 });
 
 // Mouse UP
 window.addEventListener("mouseup", () => {
-	waveGen.stopWave();
+	waveGen.stopWave(0);
 });
 
 // Touch events ===========
 // Touch DOWN
-frequency_picker.addEventListener("touchstart", () => {
-	waveGen.playWave();
+frequency_picker.addEventListener("touchstart", (e) => {
+	const targetTouch = e.changedTouches[0];
+	if (!waveGen.isAudioInitializated(targetTouch.identifier) && targetTouch.identifier > 0) waveGen.initAudio(targetTouch.identifier);
+	if (audioAllowed) e.preventDefault();
+
+	// Set frequency
+	const frequency = getFrequency(targetTouch.clientX / innerWidth);
+	waveGen.setFrequency(frequency, targetTouch.identifier);
+	waveGen.playWave(targetTouch.identifier);
 });
 
-// Mouse MOVE
-frequency_picker.addEventListener("touchmove", () => {
-	const frequency = getFrequency();
-	waveGen.setFrequency(frequency);
-	frequencyLabel.innerHTML = frequency;
+// Touch MOVE
+frequency_picker.addEventListener("touchmove", (e) => {
+	e.preventDefault();
+	let displayFrequency = "";
+	for (const touch of e.touches){
+		if (!waveGen.isAudioInitializated(touch.identifier)) return;
+		const frequency = getFrequency(touch.clientX / innerWidth);
+		waveGen.setFrequency(frequency, touch.identifier);
+		displayFrequency += frequency.toFixed(2) + "<br>";
+	}
+	frequencyLabel.innerHTML = displayFrequency;
 });
 
 // Touch UP
-window.addEventListener("touchend", () => {
-	waveGen.stopWave();
+window.addEventListener("touchend", (e) => {
+	const targetTouch = e.changedTouches[0];
+	if (audioAllowed) e.preventDefault();
+	if (!waveGen.isAudioInitializated(targetTouch.identifier)) return;
+	waveGen.stopWave(targetTouch.identifier);
 });
 
 // Touch TAP
-window.addEventListener("click", () => {
-	waveGen.initAudio();
+window.addEventListener("click", (e) => {
+	e.preventDefault();
+	waveGen.initAudio(0);
+	audioAllowed = true;
 });
 
 
@@ -176,20 +232,20 @@ window.addEventListener("click", () => {
 // DOWN
 window.addEventListener("keydown", (e) => {
 	const keyCode = e.keyCode;
-	if (!waveGen.audioInitializated) return;
+	if (!waveGen.isAudioInitializated(0)) return;
 	switch (keyCode){
 	case KEY_NAME.space:
-		waveGen.playWave();
+		waveGen.playWave(0);
 		break;
 	}
 });
 // UP
 window.addEventListener("keyup", (e) => {
 	const keyCode = e.keyCode;
-	if (!waveGen.audioInitializated) return;
+	if (!waveGen.isAudioInitializated(0)) return;
 	switch (keyCode){
 	case (KEY_NAME.space):
-		waveGen.stopWave();
+		waveGen.stopWave(0);
 		break;
 	}
 });
@@ -216,9 +272,6 @@ function normalizeToLog(normalizedValue, maxValue, minValue = 0) {
 	return originalValue;
 }
 
-function getFrequency(){
-	return normalizeToLog(parseFloat(mouse.normX), 20000, 20).toFixed(2);
+function getFrequency(value){
+	return +normalizeToLog(parseFloat(value), 20000, 20).toFixed(2);
 }
-
-// Disable the oscillator by default
-stopButton.disabled = true;

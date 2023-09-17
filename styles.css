@@ -12,7 +12,9 @@ body {
 
 #frequency_picker {
     width: 100%;
-    height: 100svh;
+    height: 80svh;
+    position: absolute;
+    bottom: 0;
 }
 
 #frequencyLabel {

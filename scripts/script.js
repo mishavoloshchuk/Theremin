@@ -10,7 +10,7 @@ class WaveGenerator {
 	get ATTACK_TIME () { return 0.01; }
 	get RELEASE_TIME () { return 0.1; }
 
-	constructor(){
+	constructor(options){
 		// Initialize the AudioContext
 		this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -21,6 +21,11 @@ class WaveGenerator {
 		this.globalGain.connect(this.audioContext.destination);
 
 		this.activeOscillators = 0;
+
+		this.min = 20;
+		this.max = 20000;
+
+		Object.assign(this, options);
 
 		this.oscillators = new Array();
 	}
@@ -99,7 +104,7 @@ class WaveGenerator {
 	}
 
 	#adjustVolume(){
-		this.globalGain.gain.setValueAtTime(this.globalVolume / Math.max(1, this.activeOscillators), this.audioContext.currentTime);
+		this.globalGain.gain.linearRampToValueAtTime(this.globalVolume / Math.max(1, this.activeOscillators), this.audioContext.currentTime + this.RELEASE_TIME);
 	}
 }
 
@@ -162,9 +167,63 @@ class Cursor {
 	}
 }
 
+class LogGrid {
+	constructor(canvas, options = {}){
+		this.canvas = canvas;
+		canvas.width = innerWidth;
+		canvas.height = innerHeight;
+		this.ctx = canvas.getContext('2d');
+
+		this.scaleMin = options.begin || 0;
+		this.scaleMax = options.end || 20000;
+		this.renderNotes();
+	}
+
+	render(){
+		// window.requestAnimationFrame(this.render);
+		this.renderNotes();
+	}
+
+	renderNotes(){
+		const baseFrequency = 13.75; // Music note A frequency
+		let frequency = this.scaleMin; // Note: E
+		let note = 0; // Start note
+		const blackNotes = [1,4,6,9,11];
+
+		const BLACK_KEY = "#111";
+		const WHITE_KEY = "#666";
+
+		const numNotes = notesCount(this.scaleMin, this.scaleMax);
+		while (frequency < this.scaleMax) {
+
+			const screenPos = absToLogNormalize(frequency, this.scaleMax, this.scaleMin) * innerWidth;
+
+			this.ctx.beginPath();
+			this.ctx.lineWidth = innerWidth / numNotes - 1;
+			this.ctx.strokeStyle = blackNotes.includes(note % 12) ? BLACK_KEY : WHITE_KEY;
+			this.ctx.moveTo(screenPos, 0);
+			this.ctx.lineTo(screenPos, innerHeight);
+			this.ctx.stroke();
+
+			this.ctx.save();
+			this.ctx.font = "14px monospace";
+			this.ctx.fillStyle = blackNotes.includes(note % 12) ? WHITE_KEY : BLACK_KEY;
+			this.ctx.translate(screenPos - 6, 0 + note % 12 * this.canvas.height/13);
+			this.ctx.rotate(Math.PI/2);
+			this.ctx.fillText(frequency.toFixed(1), 0, 0);
+			this.ctx.restore();
+
+			note ++;
+			frequency = baseFrequency * Math.pow(2, note/12);
+		}
+	}
+}
+
 const mouse = new Cursor();
 
-const waveGen = new WaveGenerator();
+const waveGen = new WaveGenerator({min: 200, max: 2000});
+
+const grid = new LogGrid(document.getElementById('frequency_picker'), {begin: waveGen.min, end: waveGen.max});
 
 // Mouse events ==============
 // Mouse DOWN
@@ -255,23 +314,25 @@ volumeSlider.addEventListener('input', () => {
 	waveGen.setVolume(volumeSlider.value);
 });
 
-// Convert a normalized value to logarithmic value
-function normalizeToLog(normalizedValue, maxValue, minValue = 0) {
-	// Ensure the normalized value is within [0, 1]
-	normalizedValue = Math.min(1, Math.max(0, normalizedValue));
+function normalizeToLog(normVal, maxValue, minValue = 1) {
+	// Ensure the normVal is within [0, 1]
+	normVal = Math.min(1, Math.max(0, normVal));
 
-	const logMin = Math.log(minValue);
-	const logMax = Math.log(maxValue);
+	return Math.pow(2, normVal * Math.log2(maxValue/minValue) + Math.log2(minValue));
+}
 
-	// Convert the normalized value to the logarithmic range
-	const logValue = logMin + normalizedValue * (logMax - logMin);
+function absToLogNormalize(value, maxValue, minValue = 1) {
+	// Ensure the min value is within [1, maxValue]
+	minValue = Math.min(maxValue, Math.max(minValue, 1));
 
-	// Convert it back to the original range
-	const originalValue = Math.exp(logValue);
-
-	return originalValue;
+	return (Math.log2(value/minValue)) / (Math.log2(maxValue / minValue));
 }
 
 function getFrequency(value){
-	return +normalizeToLog(parseFloat(value), 20000, 20).toFixed(2);
+	return +(normalizeToLog(parseFloat(value), waveGen.max, waveGen.min)).toFixed(2);
+}
+
+function notesCount(f1, f2, semitonesInOctave = 12){
+	// Розрахунок кількості нот у діапазоні
+	return Math.round(semitonesInOctave * Math.log2(f2 / f1));
 }

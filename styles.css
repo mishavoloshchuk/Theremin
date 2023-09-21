@@ -4,22 +4,48 @@ body {
     background-color: #222;
     color: white;
     user-select: none;
+    margin: 0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --range-selector-height: 40px;
 }
 
 #controls {
-    margin: 20px;
+    margin: 10px 0;
+    width: 100%;
+}
+
+.controls_line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    height: 24px;
 }
 
 #frequency_picker {
     width: 100%;
-    height: 80svh;
+    height: calc(100svh - 54px - var( --range-selector-height));
     position: absolute;
     bottom: 0;
 }
 
+#range_background_canvas {
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    position: absolute;
+    left: 0; top: 0;
+    opacity: 0.3;
+}
+
 #frequencyLabel {
     display: inline-block;
-    width: 5em;
 }
 
 input[type="range"] {
@@ -43,8 +69,74 @@ button {
     z-index: -1;
 }
 
-.frequency_info {
+.multi-range {
+    position: relative;
+    display: block;
+    background-color: #8888;
+    height: var(--range-selector-height);
+    width: 100%;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #888;
+    --slider-thumb-color: #efefef;
+}
+
+.multi-range input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 80%;
+    left: 0;
+    box-sizing: border-box;
+    appearance: none;
+    margin: 10%, 0, 0, 0;
+    overflow: hidden;
+    outline: none;
+    background: none;
+    pointer-events: none;
+}
+.multi-range input[type="range"]::-webkit-slider-thumb {
+    height: 100vh;
+    width: 48px;
+    position: relative;
+    filter: drop-shadow(2px 2px 3px black);
+    cursor: pointer;
+    appearance: none;
+    pointer-events: all;
+    z-index: 2;
+}
+.multi-range input[type="range"]:first-child::-webkit-slider-thumb {
+    background: linear-gradient(90deg, rgba(0,0,0,0) 40%, var(--slider-thumb-color) 40%, var(--slider-thumb-color) 60%, rgba(0,0,0,0) 60%);
+}
+.multi-range input[type="range"]:last-child::-webkit-slider-thumb {
+    background: linear-gradient(90deg, rgba(0,0,0,0) 40%, var(--slider-thumb-color) 40%, var(--slider-thumb-color) 60%, rgba(0,0,0,0) 60%);
+}
+
+.frequency_label {
+    padding: 3px;
+    background-color: #1177FC;
+    border-radius: 5px;
+    margin: 0 3px;
+}
+
+#toggle_fullscreen {
+    filter: drop-shadow(2px 2px 1px black);
+    position: absolute;
     display: flex;
-    align-items: flex-start;
-    justify-content: center;
+    top: 0;
+    left: 0;
+    width: 48px;
+    height: 48px;
+    fill: white;
+    opacity: 0.4;
+    cursor: pointer;
+    z-index: 100;
+}
+#toggle_fullscreen svg {
+    display: none;
+}
+#toggle_fullscreen[enabled="false"] svg:first-child {
+    display: initial;
+}
+#toggle_fullscreen[enabled="true"] svg:last-child {
+    display: initial;
 }

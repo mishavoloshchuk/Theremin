@@ -5,6 +5,9 @@ const frequencyLabel = document.getElementById("frequencyLabel");
 
 let audioAllowed = false;
 
+// Constants
+const DEFAULT_AUDIO_ID = 0;
+
 class WaveGenerator {
 	// Constants
 	get ATTACK_TIME () { return 0.01; }
@@ -167,6 +170,76 @@ class Cursor {
 	}
 }
 
+class DoubleRange {
+	constructor(id, options = {}){
+		this.wrapper = document.getElementById(id);
+		this.rangeMin = this.wrapper.querySelector("input[name='start']");
+		this.rangeMax = this.wrapper.querySelector("input[name='end']");
+
+		this.minClosureNorm = options.minClosureNorm || 0;
+
+		this.min = options.min;
+		this.max = options.max;
+
+		// Set initial values
+		this.startNorm = options.initStart ? this.#absConvert(options.initStart) : 0;
+		this.endNorm =options.initEnd ? this.#absConvert(options.initEnd) : 1;
+		this.rangeMin.setAttribute('value', this.startNorm);
+		this.rangeMax.setAttribute('value', this.endNorm);
+
+
+		this.startAbs = options.initStart || options.max;
+		this.endAbs = options.initEnd || options.max;
+
+		this.wrapper.addEventListener('input', (e) => {
+			const input = e.target;
+			if (input.getAttribute('name') === 'start'){
+				this.#startInput(e);
+			} else {
+				this.#endInput(e);
+			}
+
+			options.oninput && options.oninput(this.startAbs, this.endAbs, e);
+		});
+
+		this.wrapper.addEventListener('change', (e) => {
+			options.onchange && options.onchange(this.startAbs, this.endAbs, e);
+		});
+	}
+
+	#startInput(e){
+		const input = e.target;
+		if (parseFloat(input.value) + this.minClosureNorm <= +this.rangeMax.value){
+			const valAbs = this.#logConvert(parseFloat(input.value));
+			this.startAbs = valAbs;
+		} else {
+			input.value = this.#absConvert(this.endAbs) - this.minClosureNorm;
+			this.startAbs = this.#logConvert(parseFloat(input.value));
+		}
+		this.startNorm = parseFloat(input.value);
+	}
+
+	#endInput(e){
+		const input = e.target;
+		if (parseFloat(this.rangeMin.value) <= parseFloat(input.value) - this.minClosureNorm){
+			const valAbs = this.#logConvert(parseFloat(input.value));
+			this.endAbs = valAbs;
+		} else {
+			input.value = this.#absConvert(this.startAbs) + this.minClosureNorm;
+			this.endAbs = this.#logConvert(parseFloat(input.value));
+		}
+		this.endNorm = parseFloat(input.value);
+	}
+
+	#absConvert(value){
+		return absToLogNormalize(value, this.max, this.min);
+	}
+
+	#logConvert(value){
+		return normalizeToLog(parseFloat(value), this.max, this.min)
+	}
+}
+
 class LogGrid {
 	constructor(canvas, options = {}){
 		this.canvas = canvas;
@@ -176,24 +249,29 @@ class LogGrid {
 
 		this.scaleMin = options.begin || 0;
 		this.scaleMax = options.end || 20000;
-		this.renderNotes();
-	}
 
-	render(){
-		// window.requestAnimationFrame(this.render);
-		this.renderNotes();
+		this.renderLabels = false;
+
+		window.addEventListener('resize', () => {
+			this.canvas.width = innerWidth;
+			this.canvas.height = innerHeight;
+			this.renderNotes();
+		})
 	}
 
 	renderNotes(){
-		const baseFrequency = 13.75; // Music note A frequency
-		let frequency = this.scaleMin; // Note: E
+		const BASE_FREQUENCY = 13.75; // Music note A frequency
+		let frequency = this.scaleMin;
 		let note = 0; // Start note
 		const blackNotes = [1,4,6,9,11];
+		const notesNames = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
 
 		const BLACK_KEY = "#111";
-		const WHITE_KEY = "#666";
+		const WHITE_KEY = "#888";
 
 		const numNotes = notesCount(this.scaleMin, this.scaleMax);
+
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		while (frequency < this.scaleMax) {
 
 			const screenPos = absToLogNormalize(frequency, this.scaleMax, this.scaleMin) * innerWidth;
@@ -205,30 +283,51 @@ class LogGrid {
 			this.ctx.lineTo(screenPos, innerHeight);
 			this.ctx.stroke();
 
-			this.ctx.save();
-			this.ctx.font = "14px monospace";
-			this.ctx.fillStyle = blackNotes.includes(note % 12) ? WHITE_KEY : BLACK_KEY;
-			this.ctx.translate(screenPos - 6, 0 + note % 12 * this.canvas.height/13);
-			this.ctx.rotate(Math.PI/2);
-			this.ctx.fillText(frequency.toFixed(1), 0, 0);
-			this.ctx.restore();
+			if (this.renderLabels){
+				this.ctx.save();
+				this.ctx.font = "14px monospace";
+				this.ctx.fillStyle = blackNotes.includes(note % 12) ? WHITE_KEY : BLACK_KEY;
+				this.ctx.translate(screenPos - 5, 10);
+				this.ctx.rotate(Math.PI/2);
+				this.ctx.fillText(`${notesNames[note%12]}(${frequency.toFixed(1)})`, 0, 0);
+				this.ctx.restore();
+			}
 
 			note ++;
-			frequency = baseFrequency * Math.pow(2, note/12);
+			frequency = BASE_FREQUENCY * Math.pow(2, note/12);
 		}
 	}
 }
 
 const mouse = new Cursor();
 
-const waveGen = new WaveGenerator({min: 200, max: 2000});
+const dRange = new DoubleRange('doubleRange', {
+	min: 20,
+	max: 20000,
+	initStart: 108,
+	initEnd: 5000,
+	minClosureNorm: 0.1,
+	oninput: (start, end) => {
+		grid.scaleMin = waveGen.min = start;
+		grid.scaleMax = waveGen.max = end;
+		grid.renderNotes();
+	}
+});
+const rangeBackground = new LogGrid(document.getElementById('range_background_canvas'), {begin: dRange.min, end: dRange.max});
+rangeBackground.renderNotes();
 
-const grid = new LogGrid(document.getElementById('frequency_picker'), {begin: waveGen.min, end: waveGen.max});
+const waveGen = new WaveGenerator({min: dRange.min, max: dRange.max});
+
+const grid = new LogGrid(document.getElementById('frequency_picker'), {begin: dRange.min, end: dRange.max});
+grid.renderLabels = true;
+grid.scaleMin = waveGen.min = dRange.startAbs;
+grid.scaleMax = waveGen.max = dRange.endAbs;
+grid.renderNotes();
 
 // Mouse events ==============
 // Mouse DOWN
 frequency_picker.addEventListener("mousedown", () => {
-	if (!waveGen.isAudioInitializated(0)) waveGen.initAudio(0);
+	if (!waveGen.isAudioInitializated(0)) waveGen.initAudio(DEFAULT_AUDIO_ID);
 	waveGen.playWave(0);
 	audioAllowed = true;
 });
@@ -237,7 +336,7 @@ frequency_picker.addEventListener("mousedown", () => {
 frequency_picker.addEventListener("mousemove", (e) => {
 	const frequency = getFrequency(mouse.normX);
 	waveGen.setFrequency(frequency, 0);
-	frequencyLabel.innerHTML = frequency;
+	frequencyLabel.innerHTML = `<div class="frequency_label">${frequency}</div>`;
 });
 
 // Mouse UP
@@ -266,7 +365,7 @@ frequency_picker.addEventListener("touchmove", (e) => {
 		if (!waveGen.isAudioInitializated(touch.identifier)) return;
 		const frequency = getFrequency(touch.clientX / innerWidth);
 		waveGen.setFrequency(frequency, touch.identifier);
-		displayFrequency += frequency.toFixed(2) + "<br>";
+		displayFrequency += `<span class="frequency_label">${frequency.toFixed(2)}</span>`;
 	}
 	frequencyLabel.innerHTML = displayFrequency;
 });
@@ -274,15 +373,13 @@ frequency_picker.addEventListener("touchmove", (e) => {
 // Touch UP
 window.addEventListener("touchend", (e) => {
 	const targetTouch = e.changedTouches[0];
-	if (audioAllowed) e.preventDefault();
 	if (!waveGen.isAudioInitializated(targetTouch.identifier)) return;
 	waveGen.stopWave(targetTouch.identifier);
 });
 
 // Touch TAP
-window.addEventListener("click", (e) => {
-	e.preventDefault();
-	waveGen.initAudio(0);
+frequency_picker.addEventListener("click", (e) => {
+	waveGen.initAudio(DEFAULT_AUDIO_ID);
 	audioAllowed = true;
 });
 
@@ -314,6 +411,39 @@ volumeSlider.addEventListener('input', () => {
 	waveGen.setVolume(volumeSlider.value);
 });
 
+// Toggle full screen
+document.getElementById('toggle_fullscreen').addEventListener('click', toggleFullScreen);
+function toggleFullScreen() {
+	if (!document.fullscreenElement) {
+		document.documentElement.requestFullscreen();
+	} else {
+		if (document.exitFullscreen) {
+			document.exitFullscreen();
+		}
+	}
+}
+function setFullScreenIcon() {
+	let fullScreenBtn = document.getElementById("toggle_fullscreen");
+	if (document.fullscreenElement) {
+		fullScreenBtn.setAttribute('enabled', 'true');
+	} else {
+		if (document.exitFullscreen) {
+			fullScreenBtn.setAttribute('enabled', 'false');
+		}
+	}
+}
+document.addEventListener('fullscreenchange', (e) => {
+	if (!document.fullscreenElement) {
+		e.target.setAttribute('enabled', 'true');
+	} else {
+		e.target.setAttribute('enabled', 'false');
+	}
+});
+
+window.addEventListener('resize', function (){
+	setFullScreenIcon(); // Check full screen mode and set the button icon
+});
+
 function normalizeToLog(normVal, maxValue, minValue = 1) {
 	// Ensure the normVal is within [0, 1]
 	normVal = Math.min(1, Math.max(0, normVal));
@@ -328,11 +458,15 @@ function absToLogNormalize(value, maxValue, minValue = 1) {
 	return (Math.log2(value/minValue)) / (Math.log2(maxValue / minValue));
 }
 
-function getFrequency(value){
-	return +(normalizeToLog(parseFloat(value), waveGen.max, waveGen.min)).toFixed(2);
+function getFrequency(normVal){
+	return +(normalizeToLog(parseFloat(normVal), waveGen.max, waveGen.min)).toFixed(2);
 }
 
 function notesCount(f1, f2, semitonesInOctave = 12){
 	// Розрахунок кількості нот у діапазоні
 	return Math.round(semitonesInOctave * Math.log2(f2 / f1));
+}
+
+function absToNorm(val, max, min){
+	return (val - min) / (max - min);
 }

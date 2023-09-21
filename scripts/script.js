@@ -365,7 +365,7 @@ frequency_picker.addEventListener("touchmove", (e) => {
 		if (!waveGen.isAudioInitializated(touch.identifier)) return;
 		const frequency = getFrequency(touch.clientX / innerWidth);
 		waveGen.setFrequency(frequency, touch.identifier);
-		displayFrequency += `<span class="frequency_label">${frequency.toFixed(2)}</span>`;
+		displayFrequency += `<span class="frequency_label">${frequency}</span>`;
 	}
 	frequencyLabel.innerHTML = displayFrequency;
 });
@@ -459,7 +459,7 @@ function absToLogNormalize(value, maxValue, minValue = 1) {
 }
 
 function getFrequency(normVal){
-	return +(normalizeToLog(parseFloat(normVal), waveGen.max, waveGen.min)).toFixed(2);
+	return parseFloat(normalizeToLog(parseFloat(normVal), waveGen.max, waveGen.min)).toFixed(2);
 }
 
 function notesCount(f1, f2, semitonesInOctave = 12){

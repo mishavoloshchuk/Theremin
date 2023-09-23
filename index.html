@@ -8,6 +8,15 @@
     <script type="text/javascript" src="scripts/keyNames.js"></script>
 </head>
 <body>
+    <!-- Audio permission screen -->
+    <div class="prompt_modal_wrapper" id="audio_permission_modal" animationDuration="200" animState="showed">
+        <div class="modal_dimming"></div>
+        <div class="prompt_modal">
+            <h2 class="modal_title">Allow the audio to continue?</h2>
+            <button class="button" onclick="allowAudio();">Ok</button>
+            <button class="button" onclick="alert('You have to allow the audio to continue')">Cancel</button>
+        </div>
+    </div>
     <!-- Toggle full screen button -->
     <div id="toggle_fullscreen" enabled="false">
         <!-- SVG Image full screen on -->

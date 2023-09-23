@@ -3,10 +3,26 @@ const playButton = document.getElementById("playButton");
 const stopButton = document.getElementById("stopButton");
 const frequencyLabel = document.getElementById("frequencyLabel");
 
-let audioAllowed = false;
-
 // Constants
 const DEFAULT_AUDIO_ID = 0;
+
+const DEBUG_MODE = false;
+
+// Animation
+Element.prototype.show = function (){
+	if (this.getAttribute('animState') !== "hidden" && this.getAttribute('animState') !== null) return;
+	const animDuration = this.getAttribute('animationDuration');
+	this.setAttribute('animState', 'showing');
+	clearTimeout(this.timeout);
+	this.timeout = setTimeout(() => {this.setAttribute('animState', 'showed');}, animDuration);
+}
+Element.prototype.hide = function (){
+	if (this.getAttribute('animState') !== "showed" && this.getAttribute('animState') !== null) return;
+	const animDuration = this.getAttribute('animationDuration');
+	this.setAttribute('animState', 'hiding');
+	clearTimeout(this.timeout);
+	this.timeout = setTimeout(() => {this.setAttribute('animState', 'hidden');}, animDuration);
+}
 
 class ToneConverter {
 	static BASE_FREQUENCY = 13.75; // Music note A frequency
@@ -25,6 +41,7 @@ class ToneConverter {
 		const freqOut = this.BASE_FREQUENCY * Math.pow(2, (tone + toneShift) / this.OCTAVE);
 		return freqOut;
 	}
+
 	/**
 	 * @return Tone relative to BASE_FREQUENCY based on specified frequency
 	 **/
@@ -136,8 +153,16 @@ class WaveGenerator {
 		this.globalGain.gain.setValueAtTime(vol / Math.max(1, this.activeOscillators), this.audioContext.currentTime);
 	}
 
+	#prevOscillatorsCount = 0;
 	#adjustVolume(){
-		this.globalGain.gain.linearRampToValueAtTime(this.globalVolume / Math.max(1, this.activeOscillators), this.audioContext.currentTime + this.RELEASE_TIME);
+		const linearRampSpeed = (this.#prevOscillatorsCount < this.activeOscillators) ? this.ATTACK_TIME : this.RELEASE_TIME;
+
+		// Set adjusted gain
+		this.globalGain.gain.cancelAndHoldAtTime(this.audioContext.currentTime);
+		this.globalGain.gain.setValueAtTime(this.globalGain.gain.value, this.audioContext.currentTime);
+		this.globalGain.gain.linearRampToValueAtTime(this.globalVolume / Math.max(1, this.activeOscillators), this.audioContext.currentTime + linearRampSpeed);
+
+		this.#prevOscillatorsCount = this.activeOscillators;
 	}
 }
 
@@ -359,95 +384,116 @@ grid.scaleMin = waveGen.min = dRange.startAbs;
 grid.scaleMax = waveGen.max = dRange.endAbs;
 grid.renderNotes();
 
-// Mouse events ==============
-// Mouse DOWN
-frequency_picker.addEventListener("mousedown", () => {
-	if (!waveGen.isAudioInitializated(DEFAULT_AUDIO_ID)) waveGen.initAudio(DEFAULT_AUDIO_ID);
-	waveGen.playWave(DEFAULT_AUDIO_ID);
-	audioAllowed = true;
-});
+function allowAudio() {
+	const modal = document.getElementById('audio_permission_modal');
+	modal.hide();
+	waveGen.initAudio(DEFAULT_AUDIO_ID);
+}
 
-function getFrequencyLabel(frequency, x, y){
+function getFrequencyLabel(frequency, x, y, yShift){
 	const toneName = ToneConverter.getToneName(frequency);
 	const toneError = Math.abs( Math.sin( (ToneConverter.getTone(frequency) ) * Math.PI) );
-	let xPos = x + 70 > innerWidth ? innerWidth - 70 : x;
-	xPos = x - 50 < 0 ? 50 : xPos;
+	const elemHalfWidth = 65; // In px
+	const elemHalfHeight = 12;
+	let xPos = x + elemHalfWidth > innerWidth ? innerWidth - elemHalfWidth : x;
+	xPos = x - elemHalfWidth < 0 ? elemHalfWidth : xPos;
+
+	const canvRect = grid.canvas.getBoundingClientRect();
+	let yPos = y + yShift;
+	yPos = yPos > canvRect.top + elemHalfHeight ? yPos : canvRect.top + elemHalfHeight;
+
+	const pointPosX = 5 + (ToneConverter.getTone(frequency) - 0.5) % 1 * 90;
 	return 	`<div class="frequency_label" 
 				style="
 			background-color: hsl(215, ${100 - toneError * 100}%, 54%);
-			left: ${xPos - 50}px;
-			top: ${y - 15}px;
+			left: ${xPos}px;
+			top: ${yPos}px;
 			">
-				<div class="tone_point" style="left: ${(ToneConverter.getTone(frequency) - 0.5)%1 * 100}%"></div>
+				<div class="tone_point" style="left: ${pointPosX}%"></div>
 				<span style="display: inline-block; width: 2em;">~${toneName}</span> 
-				${frequency}
+				${frequency}Hz
 			</div>`;
 }
 
+function drawFrequenciesOnTouch(touches){
+	let displayFrequency = "";
+	for (const touch of touches){
+		if (!waveGen.isAudioInitializated(touch.identifier)) return;
+		const frequency = getFrequency(touch.clientX / innerWidth);
+		waveGen.setFrequency(frequency, touch.identifier);
+
+		displayFrequency += getFrequencyLabel(frequency, touch.clientX, touch.clientY, -60);
+	}
+	frequencyLabel.innerHTML = displayFrequency;
+}
+
+// Mouse events ==============
+// Mouse DOWN
+const mouseDownHandler = () => {
+	DEBUG_MODE && console.log("mousedown");
+	waveGen.playWave(DEFAULT_AUDIO_ID);
+}
+
+
 // Mouse MOVE
-frequency_picker.addEventListener("mousemove", (e) => {
+const mouseMoveHandler = (e) => {
+	DEBUG_MODE && console.log("mousemove");
 	const frequency = getFrequency(absToNorm(e.clientX, innerWidth, 0));
 	waveGen.setFrequency(frequency, DEFAULT_AUDIO_ID);
-	const canvRect = grid.canvas.getBoundingClientRect();
-	let yPos = e.clientY - 30;
-	yPos = canvRect.top < yPos ? yPos : e.clientY + 30;
-	frequencyLabel.innerHTML = getFrequencyLabel(frequency, e.clientX, yPos);
-});
+	frequencyLabel.innerHTML = getFrequencyLabel(frequency, e.clientX, e.clientY, -20);
+}
 
 // Mouse UP
-window.addEventListener("mouseup", () => {
+const mouseUpHandler = (e) => {
+	DEBUG_MODE && console.log("mouseup");
 	waveGen.stopWave(DEFAULT_AUDIO_ID);
-});
+}
+
+// Mouse event listeners
+frequency_picker.addEventListener("mousedown", mouseDownHandler);
+frequency_picker.addEventListener("mousemove", mouseMoveHandler);
+window.addEventListener("mouseup", mouseUpHandler);
+frequencyLabel.addEventListener("mousedown", mouseDownHandler);
+frequencyLabel.addEventListener("mousemove", mouseMoveHandler);
+
 
 // Touch events ===========
 // Touch DOWN
 frequency_picker.addEventListener("touchstart", (e) => {
+	DEBUG_MODE && console.log("touchstart");
+	e.preventDefault();
 	const targetTouch = e.changedTouches[0];
 	if (!waveGen.isAudioInitializated(targetTouch.identifier) && targetTouch.identifier > 0) waveGen.initAudio(targetTouch.identifier);
-	if (audioAllowed) e.preventDefault();
 
 	// Set frequency
 	const frequency = getFrequency(targetTouch.clientX / innerWidth);
 	waveGen.setFrequency(frequency, targetTouch.identifier);
 	waveGen.playWave(targetTouch.identifier);
+
+	drawFrequenciesOnTouch(e.touches);
 });
 
 // Touch MOVE
 frequency_picker.addEventListener("touchmove", (e) => {
+	DEBUG_MODE && console.log("touchmove");
 	e.preventDefault();
-	let displayFrequency = "";
-	for (const touch of e.touches){
-		if (!waveGen.isAudioInitializated(touch.identifier)) return;
-		const frequency = getFrequency(touch.clientX / innerWidth);
-		waveGen.setFrequency(frequency, touch.identifier);
-
-		const canvRect = grid.canvas.getBoundingClientRect();
-		let yPos = touch.clientY - 60;
-		yPos = canvRect.top < yPos ? yPos : touch.clientY + 60;
-		displayFrequency += getFrequencyLabel(frequency, touch.clientX, yPos);
-	}
-	frequencyLabel.innerHTML = displayFrequency;
+	drawFrequenciesOnTouch(e.touches);
 });
 
 // Touch UP
 window.addEventListener("touchend", (e) => {
+	DEBUG_MODE && console.log("touchend");
 	const targetTouch = e.changedTouches[0];
 	if (!waveGen.isAudioInitializated(targetTouch.identifier)) return;
 	waveGen.stopWave(targetTouch.identifier);
 	frequencyLabel.innerHTML = "";
 });
 
-// Touch TAP
-frequency_picker.addEventListener("click", (e) => {
-	waveGen.initAudio(DEFAULT_AUDIO_ID);
-	audioAllowed = true;
-});
-
-
 // Keyboard events
 // DOWN
 window.addEventListener("keydown", (e) => {
 	const keyCode = e.keyCode;
+	DEBUG_MODE && console.log("keydown", keyCode);
 	if (!waveGen.isAudioInitializated(DEFAULT_AUDIO_ID)) return;
 	switch (keyCode){
 	case KEY_NAME.space:
@@ -458,6 +504,7 @@ window.addEventListener("keydown", (e) => {
 // UP
 window.addEventListener("keyup", (e) => {
 	const keyCode = e.keyCode;
+	DEBUG_MODE && console.log("keyup", keyCode);
 	if (!waveGen.isAudioInitializated(DEFAULT_AUDIO_ID)) return;
 	switch (keyCode){
 	case (KEY_NAME.space):

@@ -166,65 +166,6 @@ class WaveGenerator {
 	}
 }
 
-class Cursor {
-	// Enum constants
-	static DOWN = true;
-	static UP = false;
-	static LEFT = 1;
-	static MIDDLE = 2;
-	static RIGHT = 3;
-
-	constructor(){
-		Object.assign(this, {
-			posX: 0,
-			posY: 0,
-			normX: 0,
-			normY: 0,
-			leftDown: false,
-		});
-
-		window.addEventListener('mousemove', (e) => {
-			this.posX = e.clientX;
-			this.posY = e.clientY;
-
-			this.normX = this.posX / innerWidth;
-			this.normY = this.posY / innerHeight;
-		});
-
-		window.addEventListener('mousedown', (e) => { 
-			switch (e.which){
-			case Cursor.LEFT:
-				this.leftDown = Cursor.DOWN;
-				break;
-			}
-		});
-
-		window.addEventListener('mouseup', (e) => { 
-			switch (e.which){
-			case Cursor.LEFT: "value", 
-				this.leftDown = Cursor.UP;
-				break;
-			}
-		});
-
-		window.addEventListener('touchmove', (e) => {
-			this.posX = e.targetTouches[0].clientX;
-			this.posY = e.targetTouches[0].clientY;
-
-			this.normX = this.posX / innerWidth;
-			this.normY = this.posY / innerHeight;
-		});
-
-		window.addEventListener('touchstart', (e) => { 
-			this.leftDown = Cursor.DOWN;
-		});
-
-		window.addEventListener('touchend', (e) => { 
-			this.leftDown = Cursor.UP;
-		});
-	}
-}
-
 class DoubleRange {
 	constructor(id, options = {}){
 		this.wrapper = document.getElementById(id);
@@ -358,8 +299,6 @@ class LogGrid {
 		}
 	}
 }
-
-const mouse = new Cursor();
 
 const dRange = new DoubleRange('doubleRange', {
 	min: 20,

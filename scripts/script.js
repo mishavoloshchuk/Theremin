@@ -8,6 +8,36 @@ let audioAllowed = false;
 // Constants
 const DEFAULT_AUDIO_ID = 0;
 
+class ToneConverter {
+	static BASE_FREQUENCY = 13.75; // Music note A frequency
+	static OCTAVE = 12;
+
+	static TONE_NAMES = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+
+	/**
+	 * @frequency Is input frequency
+	 * @toneShift Shift the frequency by the specified tone value
+	 * @toneShift 1/-1/0.5 is +1/-1/+0.5 tone to frequency
+	**/
+	static getToneNearFrequency(frequency, toneShift = 0) { 
+		const exactTone = this.getTone(frequency);
+		const tone = Math.round(exactTone);
+		const freqOut = this.BASE_FREQUENCY * Math.pow(2, (tone + toneShift) / this.OCTAVE);
+		return freqOut;
+	}
+	/**
+	 * @return Tone relative to BASE_FREQUENCY based on specified frequency
+	 **/
+	static getTone(frequency){
+		return Math.log2(frequency / this.BASE_FREQUENCY) * this.OCTAVE;
+	}
+
+	static getToneName(frequency){
+		const tone = Math.round(this.getTone(frequency));
+		return this.TONE_NAMES[tone % this.OCTAVE];
+	}
+}
+
 class WaveGenerator {
 	// Constants
 	get ATTACK_TIME () { return 0.01; }
@@ -243,8 +273,7 @@ class DoubleRange {
 class LogGrid {
 	constructor(canvas, options = {}){
 		this.canvas = canvas;
-		canvas.width = innerWidth;
-		canvas.height = innerHeight;
+		this.#setCanvasSize();
 		this.ctx = canvas.getContext('2d');
 
 		this.scaleMin = options.begin || 0;
@@ -253,48 +282,54 @@ class LogGrid {
 		this.renderLabels = false;
 
 		window.addEventListener('resize', () => {
-			this.canvas.width = innerWidth;
-			this.canvas.height = innerHeight;
+			this.#setCanvasSize();
 			this.renderNotes();
-		})
+		});
+	}
+
+	#setCanvasSize() {
+		const compHeight = parseFloat(getComputedStyle(this.canvas).getPropertyValue('height'));
+		this.canvas.setAttribute('width', innerWidth);
+		this.canvas.setAttribute('height', compHeight);
 	}
 
 	renderNotes(){
-		const BASE_FREQUENCY = 13.75; // Music note A frequency
-		let frequency = this.scaleMin;
-		let note = 0; // Start note
-		const blackNotes = [1,4,6,9,11];
-		const notesNames = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
-
 		const BLACK_KEY = "#111";
 		const WHITE_KEY = "#888";
 
 		const numNotes = notesCount(this.scaleMin, this.scaleMax);
 
+		let frequency = this.scaleMin;
+		let note = 0; // Start note
+		const blackNotes = [1,4,6,9,11];
+
+		const separationLineWidth = 1;
+
 		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		while (frequency < this.scaleMax) {
+		while (ToneConverter.getToneNearFrequency(frequency, +0.5) < this.scaleMax) {
+			note ++;
+			frequency = ToneConverter.BASE_FREQUENCY * Math.pow(2, note / ToneConverter.OCTAVE);
+
+			if (ToneConverter.getToneNearFrequency(frequency, 0.5) < this.scaleMin) continue;
 
 			const screenPos = absToLogNormalize(frequency, this.scaleMax, this.scaleMin) * innerWidth;
 
 			this.ctx.beginPath();
-			this.ctx.lineWidth = innerWidth / numNotes - 1;
-			this.ctx.strokeStyle = blackNotes.includes(note % 12) ? BLACK_KEY : WHITE_KEY;
+			this.ctx.lineWidth = innerWidth / numNotes - separationLineWidth;
+			this.ctx.strokeStyle = blackNotes.includes(note % ToneConverter.OCTAVE) ? BLACK_KEY : WHITE_KEY;
 			this.ctx.moveTo(screenPos, 0);
 			this.ctx.lineTo(screenPos, innerHeight);
 			this.ctx.stroke();
 
 			if (this.renderLabels){
 				this.ctx.save();
-				this.ctx.font = "14px monospace";
-				this.ctx.fillStyle = blackNotes.includes(note % 12) ? WHITE_KEY : BLACK_KEY;
+				this.ctx.font = "16px monospace";
+				this.ctx.fillStyle = blackNotes.includes(note % ToneConverter.OCTAVE) ? WHITE_KEY : BLACK_KEY;
 				this.ctx.translate(screenPos - 5, 10);
 				this.ctx.rotate(Math.PI/2);
-				this.ctx.fillText(`${notesNames[note%12]}(${frequency.toFixed(1)})`, 0, 0);
+				this.ctx.fillText(`${ToneConverter.TONE_NAMES[note % ToneConverter.OCTAVE]} (${frequency.toFixed(1)})`, 0, 0);
 				this.ctx.restore();
 			}
-
-			note ++;
-			frequency = BASE_FREQUENCY * Math.pow(2, note/12);
 		}
 	}
 }
@@ -327,21 +362,41 @@ grid.renderNotes();
 // Mouse events ==============
 // Mouse DOWN
 frequency_picker.addEventListener("mousedown", () => {
-	if (!waveGen.isAudioInitializated(0)) waveGen.initAudio(DEFAULT_AUDIO_ID);
-	waveGen.playWave(0);
+	if (!waveGen.isAudioInitializated(DEFAULT_AUDIO_ID)) waveGen.initAudio(DEFAULT_AUDIO_ID);
+	waveGen.playWave(DEFAULT_AUDIO_ID);
 	audioAllowed = true;
 });
 
+function getFrequencyLabel(frequency, x, y){
+	const toneName = ToneConverter.getToneName(frequency);
+	const toneError = Math.abs( Math.sin( (ToneConverter.getTone(frequency) ) * Math.PI) );
+	let xPos = x + 70 > innerWidth ? innerWidth - 70 : x;
+	xPos = x - 50 < 0 ? 50 : xPos;
+	return 	`<div class="frequency_label" 
+				style="
+			background-color: hsl(215, ${100 - toneError * 100}%, 54%);
+			left: ${xPos - 50}px;
+			top: ${y - 15}px;
+			">
+				<div class="tone_point" style="left: ${(ToneConverter.getTone(frequency) - 0.5)%1 * 100}%"></div>
+				<span style="display: inline-block; width: 2em;">~${toneName}</span> 
+				${frequency}
+			</div>`;
+}
+
 // Mouse MOVE
 frequency_picker.addEventListener("mousemove", (e) => {
-	const frequency = getFrequency(mouse.normX);
-	waveGen.setFrequency(frequency, 0);
-	frequencyLabel.innerHTML = `<div class="frequency_label">${frequency}</div>`;
+	const frequency = getFrequency(absToNorm(e.clientX, innerWidth, 0));
+	waveGen.setFrequency(frequency, DEFAULT_AUDIO_ID);
+	const canvRect = grid.canvas.getBoundingClientRect();
+	let yPos = e.clientY - 30;
+	yPos = canvRect.top < yPos ? yPos : e.clientY + 30;
+	frequencyLabel.innerHTML = getFrequencyLabel(frequency, e.clientX, yPos);
 });
 
 // Mouse UP
 window.addEventListener("mouseup", () => {
-	waveGen.stopWave(0);
+	waveGen.stopWave(DEFAULT_AUDIO_ID);
 });
 
 // Touch events ===========
@@ -365,7 +420,11 @@ frequency_picker.addEventListener("touchmove", (e) => {
 		if (!waveGen.isAudioInitializated(touch.identifier)) return;
 		const frequency = getFrequency(touch.clientX / innerWidth);
 		waveGen.setFrequency(frequency, touch.identifier);
-		displayFrequency += `<span class="frequency_label">${frequency}</span>`;
+
+		const canvRect = grid.canvas.getBoundingClientRect();
+		let yPos = touch.clientY - 60;
+		yPos = canvRect.top < yPos ? yPos : touch.clientY + 60;
+		displayFrequency += getFrequencyLabel(frequency, touch.clientX, yPos);
 	}
 	frequencyLabel.innerHTML = displayFrequency;
 });
@@ -375,6 +434,7 @@ window.addEventListener("touchend", (e) => {
 	const targetTouch = e.changedTouches[0];
 	if (!waveGen.isAudioInitializated(targetTouch.identifier)) return;
 	waveGen.stopWave(targetTouch.identifier);
+	frequencyLabel.innerHTML = "";
 });
 
 // Touch TAP
@@ -388,20 +448,20 @@ frequency_picker.addEventListener("click", (e) => {
 // DOWN
 window.addEventListener("keydown", (e) => {
 	const keyCode = e.keyCode;
-	if (!waveGen.isAudioInitializated(0)) return;
+	if (!waveGen.isAudioInitializated(DEFAULT_AUDIO_ID)) return;
 	switch (keyCode){
 	case KEY_NAME.space:
-		waveGen.playWave(0);
+		waveGen.playWave(DEFAULT_AUDIO_ID);
 		break;
 	}
 });
 // UP
 window.addEventListener("keyup", (e) => {
 	const keyCode = e.keyCode;
-	if (!waveGen.isAudioInitializated(0)) return;
+	if (!waveGen.isAudioInitializated(DEFAULT_AUDIO_ID)) return;
 	switch (keyCode){
 	case (KEY_NAME.space):
-		waveGen.stopWave(0);
+		waveGen.stopWave(DEFAULT_AUDIO_ID);
 		break;
 	}
 });
@@ -411,38 +471,46 @@ volumeSlider.addEventListener('input', () => {
 	waveGen.setVolume(volumeSlider.value);
 });
 
-// Toggle full screen
-document.getElementById('toggle_fullscreen').addEventListener('click', toggleFullScreen);
-function toggleFullScreen() {
-	if (!document.fullscreenElement) {
-		document.documentElement.requestFullscreen();
-	} else {
-		if (document.exitFullscreen) {
-			document.exitFullscreen();
-		}
+class ToggleFullScreen {
+	get FULLSCREEN_ON() {return 'true'}
+	get FULLSCREEN_OFF() {return 'false'}
+	constructor(btnId) {
+		this.buttonId = btnId
+		this.initEventListeners();
 	}
-}
-function setFullScreenIcon() {
-	let fullScreenBtn = document.getElementById("toggle_fullscreen");
-	if (document.fullscreenElement) {
-		fullScreenBtn.setAttribute('enabled', 'true');
-	} else {
-		if (document.exitFullscreen) {
-			fullScreenBtn.setAttribute('enabled', 'false');
-		}
-	}
-}
-document.addEventListener('fullscreenchange', (e) => {
-	if (!document.fullscreenElement) {
-		e.target.setAttribute('enabled', 'true');
-	} else {
-		e.target.setAttribute('enabled', 'false');
-	}
-});
 
-window.addEventListener('resize', function (){
-	setFullScreenIcon(); // Check full screen mode and set the button icon
-});
+	initEventListeners(){
+		document.getElementById(this.buttonId).addEventListener('click', this.toggleFullScreen);
+
+		document.addEventListener('fullscreenchange', (e) => {
+			e.target.setAttribute('enabled', document.fullscreenElement ?  this.FULLSCREEN_ON : this.FULLSCREEN_OFF);
+		});
+
+		window.addEventListener('resize', this.setFullScreenIcon.bind(this));
+	}
+	// Toggle full screen
+	toggleFullScreen() {
+		if (!document.fullscreenElement) {
+			document.documentElement.requestFullscreen();
+		} else {
+			if (document.exitFullscreen) {
+				document.exitFullscreen();
+			}
+		}
+	}
+	setFullScreenIcon() {
+		let fullScreenBtn = document.getElementById(this.buttonId);
+		if (document.fullscreenElement) {
+			fullScreenBtn.setAttribute('enabled', this.FULLSCREEN_ON);
+		} else {
+			if (document.exitFullscreen) {
+				fullScreenBtn.setAttribute('enabled', this.FULLSCREEN_OFF);
+			}
+		}
+	}
+}
+const fullScreenButton = new ToggleFullScreen('toggle_fullscreen');
+
 
 function normalizeToLog(normVal, maxValue, minValue = 1) {
 	// Ensure the normVal is within [0, 1]
@@ -464,7 +532,7 @@ function getFrequency(normVal){
 
 function notesCount(f1, f2, semitonesInOctave = 12){
 	// Розрахунок кількості нот у діапазоні
-	return Math.round(semitonesInOctave * Math.log2(f2 / f1));
+	return semitonesInOctave * Math.log2(f2 / f1);
 }
 
 function absToNorm(val, max, min){

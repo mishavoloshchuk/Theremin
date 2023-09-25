@@ -4,9 +4,9 @@ const stopButton = document.getElementById("stopButton");
 const frequencyLabel = document.getElementById("frequencyLabel");
 
 // Constants
-const DEFAULT_AUDIO_ID = 0;
-
 const DEBUG_MODE = false;
+
+const DEFAULT_AUDIO_ID = 0;
 
 // Animation
 Element.prototype.show = function (){
@@ -171,6 +171,7 @@ class DoubleRange {
 		this.wrapper = document.getElementById(id);
 		this.rangeMin = this.wrapper.querySelector("input[name='start']");
 		this.rangeMax = this.wrapper.querySelector("input[name='end']");
+		this.rangeMove = this.wrapper.querySelector("input[name='move']");
 
 		this.minClosureNorm = options.minClosureNorm || 0;
 
@@ -182,17 +183,26 @@ class DoubleRange {
 		this.endNorm =options.initEnd ? this.#absConvert(options.initEnd) : 1;
 		this.rangeMin.setAttribute('value', this.startNorm);
 		this.rangeMax.setAttribute('value', this.endNorm);
-
+		this.#updateMiddleRange();
 
 		this.startAbs = options.initStart || options.max;
 		this.endAbs = options.initEnd || options.max;
 
 		this.wrapper.addEventListener('input', (e) => {
 			const input = e.target;
-			if (input.getAttribute('name') === 'start'){
+			switch (input.getAttribute('name')){
+			case 'start':
 				this.#startInput(e);
-			} else {
+				this.#updateMiddleRange();
+				break;
+			case 'move':
+				this.#moveInput(e);
+				this.#updateMiddleRange()
+				break;
+			case 'end':
 				this.#endInput(e);
+				this.#updateMiddleRange();
+				break;
 			}
 
 			options.oninput && options.oninput(this.startAbs, this.endAbs, e);
@@ -203,8 +213,8 @@ class DoubleRange {
 		});
 	}
 
-	#startInput(e){
-		const input = e.target;
+	#startInput(){
+		const input = this.rangeMin;
 		if (parseFloat(input.value) + this.minClosureNorm <= +this.rangeMax.value){
 			const valAbs = this.#logConvert(parseFloat(input.value));
 			this.startAbs = valAbs;
@@ -215,8 +225,18 @@ class DoubleRange {
 		this.startNorm = parseFloat(input.value);
 	}
 
-	#endInput(e){
-		const input = e.target;
+	#moveInput(){
+		const input = this.rangeMove;
+		const rangeValue = parseFloat(input.value);
+		const distanceHalf = (parseFloat(this.rangeMax.value) - parseFloat(this.rangeMin.value)) / 2;
+		this.rangeMin.value = rangeValue - distanceHalf;
+		this.rangeMax.value = rangeValue + distanceHalf;
+		this.#startInput();
+		this.#endInput();
+	}
+
+	#endInput(){
+		const input = this.rangeMax;
 		if (parseFloat(this.rangeMin.value) <= parseFloat(input.value) - this.minClosureNorm){
 			const valAbs = this.#logConvert(parseFloat(input.value));
 			this.endAbs = valAbs;
@@ -225,6 +245,12 @@ class DoubleRange {
 			this.endAbs = this.#logConvert(parseFloat(input.value));
 		}
 		this.endNorm = parseFloat(input.value);
+	}
+
+	#updateMiddleRange(){
+		const newValue = (this.startNorm + this.endNorm) / 2;
+		this.rangeMove.value = newValue;
+		document.querySelector(':root').style.setProperty('--range-selector-thumb-width', ((this.endNorm - this.startNorm) * 100) + '%');
 	}
 
 	#absConvert(value){
@@ -368,7 +394,7 @@ function drawFrequenciesOnTouch(touches){
 
 // Mouse events ==============
 // Mouse DOWN
-const mouseDownHandler = () => {
+const mouseDownHandler = (e) => {
 	DEBUG_MODE && console.log("mousedown");
 	waveGen.playWave(DEFAULT_AUDIO_ID);
 }
@@ -388,17 +414,9 @@ const mouseUpHandler = (e) => {
 	waveGen.stopWave(DEFAULT_AUDIO_ID);
 }
 
-// Mouse event listeners
-frequency_picker.addEventListener("mousedown", mouseDownHandler);
-frequency_picker.addEventListener("mousemove", mouseMoveHandler);
-window.addEventListener("mouseup", mouseUpHandler);
-frequencyLabel.addEventListener("mousedown", mouseDownHandler);
-frequencyLabel.addEventListener("mousemove", mouseMoveHandler);
-
-
 // Touch events ===========
 // Touch DOWN
-frequency_picker.addEventListener("touchstart", (e) => {
+const touchStartHandler = function(e) {
 	DEBUG_MODE && console.log("touchstart");
 	e.preventDefault();
 	const targetTouch = e.changedTouches[0];
@@ -410,23 +428,37 @@ frequency_picker.addEventListener("touchstart", (e) => {
 	waveGen.playWave(targetTouch.identifier);
 
 	drawFrequenciesOnTouch(e.touches);
-});
+}
 
 // Touch MOVE
-frequency_picker.addEventListener("touchmove", (e) => {
+const touchMoveHandler = function(e) {
 	DEBUG_MODE && console.log("touchmove");
 	e.preventDefault();
 	drawFrequenciesOnTouch(e.touches);
-});
+}
 
 // Touch UP
-window.addEventListener("touchend", (e) => {
+const touchEndHandler = function(e) {
 	DEBUG_MODE && console.log("touchend");
 	const targetTouch = e.changedTouches[0];
 	if (!waveGen.isAudioInitializated(targetTouch.identifier)) return;
 	waveGen.stopWave(targetTouch.identifier);
 	frequencyLabel.innerHTML = "";
-});
+}
+
+
+// Mouse event listeners
+frequency_picker.addEventListener("mousedown", mouseDownHandler);
+frequency_picker.addEventListener("mousemove", mouseMoveHandler);
+window.addEventListener("mouseup", mouseUpHandler);
+frequencyLabel.addEventListener("mousedown", mouseDownHandler);
+frequencyLabel.addEventListener("mousemove", mouseMoveHandler);
+
+// Touch event listeners
+frequency_picker.addEventListener("touchstart", touchStartHandler);
+frequency_picker.addEventListener("touchmove", touchMoveHandler);
+window.addEventListener("touchend", touchEndHandler);
+
 
 // Keyboard events
 // DOWN

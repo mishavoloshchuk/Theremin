@@ -16,6 +16,7 @@ body {
 
 :root {
     --range-selector-height: 40px;
+    --range-selector-thumb-width: 10%;
 }
 
 *[animState="hidden"] {
@@ -69,7 +70,9 @@ button {
 
 .multi-range {
     position: relative;
-    display: block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-color: #8888;
     height: var(--range-selector-height);
     width: 100%;
@@ -102,10 +105,16 @@ button {
     pointer-events: all;
     z-index: 2;
 }
-.multi-range input[type="range"]:first-child::-webkit-slider-thumb {
+.multi-range input[name="move"] {
+}
+.multi-range input[name="move"]::-webkit-slider-thumb {
     background: linear-gradient(90deg, rgba(0,0,0,0) 40%, var(--slider-thumb-color) 40%, var(--slider-thumb-color) 60%, rgba(0,0,0,0) 60%);
 }
-.multi-range input[type="range"]:last-child::-webkit-slider-thumb {
+
+.multi-range input[name="start"]::-webkit-slider-thumb {
+    background: linear-gradient(90deg, rgba(0,0,0,0) 40%, var(--slider-thumb-color) 40%, var(--slider-thumb-color) 60%, rgba(0,0,0,0) 60%);
+}
+.multi-range input[name="end"]::-webkit-slider-thumb {
     background: linear-gradient(90deg, rgba(0,0,0,0) 40%, var(--slider-thumb-color) 40%, var(--slider-thumb-color) 60%, rgba(0,0,0,0) 60%);
 }
 

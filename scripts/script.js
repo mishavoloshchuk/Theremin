@@ -171,46 +171,99 @@ class DoubleRange {
 		this.wrapper = document.getElementById(id);
 		this.rangeMin = this.wrapper.querySelector("input[name='start']");
 		this.rangeMax = this.wrapper.querySelector("input[name='end']");
-		this.rangeMove = this.wrapper.querySelector("input[name='move']");
+		this.rangeMove = this.wrapper.querySelector("span[name='move']");
 
+		// Constants for event listener names
+		const INPUT_EVENT = 'input';
+		const CHANGE_EVENT = 'change';
+
+		// Constants for min and max values
+		const DEFAULT_MIN = 0;
+		const DEFAULT_MAX = 1;
+
+		// Set default values if not provided in options
 		this.minClosureNorm = options.minClosureNorm || 0;
-
 		this.min = options.min;
 		this.max = options.max;
 
 		// Set initial values
-		this.startNorm = options.initStart ? this.#absConvert(options.initStart) : 0;
-		this.endNorm =options.initEnd ? this.#absConvert(options.initEnd) : 1;
+		this.startNorm = options.initStart ? this.#absConvert(options.initStart) : DEFAULT_MIN;
+		this.endNorm =options.initEnd ? this.#absConvert(options.initEnd) : DEFAULT_MAX;
 		this.rangeMin.setAttribute('value', this.startNorm);
 		this.rangeMax.setAttribute('value', this.endNorm);
+		this.oninput = options.oninput;
 		this.#updateMiddleRange();
 
 		this.startAbs = options.initStart || options.max;
 		this.endAbs = options.initEnd || options.max;
 
-		this.wrapper.addEventListener('input', (e) => {
+		this.wrapper.addEventListener(INPUT_EVENT, (e) => {
 			const input = e.target;
 			switch (input.getAttribute('name')){
 			case 'start':
 				this.#startInput(e);
-				this.#updateMiddleRange();
 				break;
 			case 'move':
 				this.#moveInput(e);
-				this.#updateMiddleRange()
 				break;
 			case 'end':
 				this.#endInput(e);
-				this.#updateMiddleRange();
 				break;
 			}
+			this.#updateMiddleRange();
 
-			options.oninput && options.oninput(this.startAbs, this.endAbs, e);
+			this.oninput && this.oninput(this.startAbs, this.endAbs, e);
 		});
 
-		this.wrapper.addEventListener('change', (e) => {
-			options.onchange && options.onchange(this.startAbs, this.endAbs, e);
-		});
+		this.#initMoveThumb();
+	}
+
+	#isInputMoveThumb = false;
+	#mousePrevPos;
+	#initMoveThumb(){
+		const MOUSE_DOWN_EVENT = 'mousedown';
+		const MOUSE_MOVE_EVENT = 'mousemove';
+		const MOUSE_UP_EVENT = 'mouseup';
+
+		const TOUCH_START_EVENT = 'touchstart';
+		const TOUCH_MOVE_EVENT = 'touchmove';
+		const TOUCH_END_EVENT = 'touchend';
+
+		const downEventHandler = (e) => {
+			// Event X position depending on device
+			const posX = e.type === MOUSE_DOWN_EVENT ? e.clientX : e.targetTouches[0].clientX;
+
+			this.#isInputMoveThumb = true;
+			this.#mousePrevPos = posX;
+		}
+
+		const moveEventHandler = (e) => {
+			if (!this.#isInputMoveThumb) return;
+
+			// Event X position depending on device
+			const posX = e.type === MOUSE_MOVE_EVENT ? e.clientX : e.targetTouches[0].clientX;
+
+			// Calculate the movement and update the input thumb position
+			this.#moveInput((posX - this.#mousePrevPos)/innerWidth);
+			this.#mousePrevPos = posX;
+
+			// Trigger the oninput callback if defined
+			this.oninput && this.oninput(this.startAbs, this.endAbs, e);
+		}
+
+		const upEventHandler = (e) => {
+			this.#isInputMoveThumb = false;
+		}
+
+		// Set mouse event listeners
+		this.rangeMove.addEventListener(MOUSE_DOWN_EVENT, downEventHandler);
+		document.addEventListener(MOUSE_MOVE_EVENT, moveEventHandler);
+		document.addEventListener(MOUSE_UP_EVENT, upEventHandler);
+
+		// Set touch event listeners
+		this.rangeMove.addEventListener(TOUCH_START_EVENT, downEventHandler);
+		document.addEventListener(TOUCH_MOVE_EVENT, moveEventHandler);
+		document.addEventListener(TOUCH_END_EVENT, upEventHandler);
 	}
 
 	#startInput(){
@@ -225,14 +278,12 @@ class DoubleRange {
 		this.startNorm = parseFloat(input.value);
 	}
 
-	#moveInput(){
-		const input = this.rangeMove;
-		const rangeValue = parseFloat(input.value);
-		const distanceHalf = (parseFloat(this.rangeMax.value) - parseFloat(this.rangeMin.value)) / 2;
-		this.rangeMin.value = rangeValue - distanceHalf;
-		this.rangeMax.value = rangeValue + distanceHalf;
+	#moveInput(moveValue){
+		this.rangeMin.value = parseFloat(this.rangeMin.value) + moveValue;
+		this.rangeMax.value = parseFloat(this.rangeMax.value) + moveValue;
 		this.#startInput();
 		this.#endInput();
+		this.#updateMiddleRange();
 	}
 
 	#endInput(){
@@ -249,8 +300,8 @@ class DoubleRange {
 
 	#updateMiddleRange(){
 		const newValue = (this.startNorm + this.endNorm) / 2;
-		this.rangeMove.value = newValue;
-		document.querySelector(':root').style.setProperty('--range-selector-thumb-width', ((this.endNorm - this.startNorm) * 100) + '%');
+		this.rangeMove.style.left = (this.rangeMin.value * 100) + "%";
+		this.rangeMove.style.right = (100 - this.rangeMax.value * 100) + "%";
 	}
 
 	#absConvert(value){

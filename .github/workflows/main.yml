@@ -15,10 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get secret
-        env: # Set the secret as an input
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-
       - name: Create destination directory
         run: mkdir -p Projects_Hub/projects/Theremin
 
@@ -26,6 +22,8 @@ jobs:
         run: rsync -av --exclude=Projects_Hub/ * Projects_Hub/projects/Theremin/
 
       - name: Commit and push changes
+        env: # Set the secret as an input
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"

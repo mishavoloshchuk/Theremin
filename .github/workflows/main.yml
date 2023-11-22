@@ -15,6 +15,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Get secret
+        env: # Set the secret as an input
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
       - name: Create destination directory
         run: mkdir -p Projects_Hub/projects/Theremin
 
@@ -27,4 +31,4 @@ jobs:
           git config user.email "actions@github.com"
           git add -A
           git commit -m "Copy Theremin repository"
-          git push https://$PAT_TOKEN@github.com/mishavoloshchuk/Theremin.git HEAD:main
+          git push https://$env:PAT_TOKEN@github.com/mishavoloshchuk/Theremin.git HEAD:main

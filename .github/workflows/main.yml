@@ -1,32 +1,31 @@
-name: Copy Theremin Repository
+# This is a basic workflow to help you get started with Actions
+
+name: CI
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - 'Projects_Hub/**'
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  copy:
+  build:
     runs-on: ubuntu-latest
-    container: pandoc/latex 
-
+    container: pandoc/latex
     steps:
-      - uses: actions/checkout@v2
-      - name: creates output
-        run:  sh ./build.sh
-        
       - name: Pushes to another repository
-        uses: cpina/github-action-push-to-another-repository@main
+        id: push_directory
+        uses: mishavoloshchuk/Projects_Hub@main
         env:
-          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
-          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+          API_TOKEN_GITHUB: ${{ secrets.PAT_TOKEN }}
         with:
-          source-directory: 'output'
-          destination-github-username: 'cpina'
-          destination-repository-name: 'pandoc-test-output'
+          source-directory: .
+          destination-github-username: 'mishavoloshchuk'
+          destination-repository-name: 'Projects_Hub'
           user-email: carles3@pina.cat
-          target-branch: main
-
+          commit-message: See ORIGIN_COMMIT from $GITHUB_REF
+          target-branch: main-does-not-exist
+          create-target-branch-if-needed: true
+      - name: Test get variable exported by push-to-another-repository
+        run: echo $DESTINATION_CLONED_DIRECTORY

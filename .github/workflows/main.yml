@@ -1,28 +1,28 @@
-name: Copy Theremin Repository to Projects_Hub
+name: Copy Theremin Repository
 
 on:
   push:
     branches:
-      - main # Change this to the default branch of your repository
+      - main  # Change this to the branch you want to trigger the workflow on
 
 jobs:
-  copy_repository:
+  copy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Create Projects_Hub directory
-      run: mkdir -p Projects_Hub/projects/Theremin
+      - name: Create destination directory
+        run: mkdir -p Projects_Hub/projects/Theremin
 
-    - name: Copy Theremin repository
-      run: cp -r * Projects_Hub/projects/Theremin
+      - name: Copy files
+        run: cp -R * Projects_Hub/projects/Theremin
 
-    - name: Commit and push changes
-      run: |
-        git config --local user.email "actions@github.com"
-        git config --local user.name "GitHub Actions"
-        git add -A
-        git commit -m "Copy Theremin repository to Projects_Hub"
-        git push
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "Copy Theremin repository"
+          git push

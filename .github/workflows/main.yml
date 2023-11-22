@@ -8,21 +8,25 @@ on:
       - 'Projects_Hub/**'
 
 jobs:
-  push_to_projects_hub:
+  copy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Projects_Hub code
+      - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          repository: mishavoloshchuk/Projects_Hub
-          token: $PAT_TOKEN
 
-      - name: Commit changes to Projects_Hub repository
+      - name: Create destination directory
+        run: mkdir -p Projects_Hub/projects/Theremin
+
+      - name: Copy files
+        run: rsync -av --exclude=Projects_Hub/ * Projects_Hub/projects/Theremin/
+
+      - name: Commit and push changes
+        env: # Set the secret as an input
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          cd Projects_Hub
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add -A
-          git commit -m "Update Theremin repository"
-          git push origin main
+          git commit -m "Copy Theremin repository"
+          git push https://$env:PAT_TOKEN@github.com/mishavoloshchuk/Theremin.git HEAD:main

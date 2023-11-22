@@ -1,9 +1,9 @@
-name: Copy Theremin repository to Projects_Hub
+name: Copy Theremin Repository to Projects_Hub
 
 on:
   push:
     branches:
-      - main
+      - main # Change this to the default branch of your repository
 
 jobs:
   copy_repository:
@@ -13,16 +13,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Create destination folder
-      run: mkdir -p Projects_Hub/projects/Theremin
+    - name: Create Projects_Hub directory
+      run: mkdir -p Projects_Hub/projects
 
-    - name: Copy repository to destination folder
-      run: cp -a . Projects_Hub/projects/Theremin
+    - name: Copy Theremin repository
+      run: cp -r * Projects_Hub/projects/Theremin
 
     - name: Commit and push changes
       run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions"
         git add -A
         git commit -m "Copy Theremin repository to Projects_Hub"
         git push

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wave Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="text/javascript" src="scripts/keyNames.js"></script>
+</head>
+<body>
+    <!-- Audio permission screen -->
+    <div class="prompt_modal_wrapper" id="audio_permission_modal" animationDuration="200" animState="showed">
+        <div class="modal_dimming"></div>
+        <div class="prompt_modal">
+            <h2 class="modal_title">Allow the audio to continue?</h2>
+            <button class="button" onclick="allowAudio();">Ok</button>
+            <button class="button" onclick="alert('You have to allow the audio to continue')">Cancel</button>
+        </div>
+    </div>
+    <!-- Toggle full screen button -->
+    <div id="toggle_fullscreen" enabled="false">
+        <!-- SVG Image full screen on -->
+        <svg xmlns="http://www.w3.org/2000/svg" height="48" width="48"><path d="M11.35 38.35q-.7 0-1.2-.5t-.5-1.2v-6.8q0-.7.5-1.2t1.25-.5q.7 0 1.175.5.475.5.475 1.2v5.1h5.1q.7 0 1.2.475t.5 1.225q0 .7-.5 1.2t-1.2.5Zm0-18.5q-.7 0-1.2-.5t-.5-1.2v-6.8q0-.7.5-1.2t1.2-.5h6.8q.7 0 1.2.5t.5 1.25q0 .7-.5 1.175-.5.475-1.2.475h-5.1v5.1q0 .7-.475 1.2t-1.225.5Zm18.5 18.5q-.7 0-1.2-.5t-.5-1.25q0-.7.5-1.175.5-.475 1.2-.475h5.1v-5.1q0-.7.475-1.2t1.225-.5q.7 0 1.2.5t.5 1.2v6.8q0 .7-.5 1.2t-1.2.5Zm6.75-18.5q-.7 0-1.175-.5-.475-.5-.475-1.2v-5.1h-5.1q-.7 0-1.2-.475t-.5-1.225q0-.7.5-1.2t1.2-.5h6.8q.7 0 1.2.5t.5 1.2v6.8q0 .7-.5 1.2t-1.25.5Z"/></svg>
+        <!-- SVG Image full screen off -->
+        <svg xmlns="http://www.w3.org/2000/svg" height="48" width="48"><path d="M18.15 38.35q-.75 0-1.225-.5-.475-.5-.475-1.2v-5.1h-5.1q-.7 0-1.2-.5t-.5-1.2q0-.75.5-1.225.5-.475 1.2-.475h6.8q.7 0 1.2.5t.5 1.2v6.8q0 .7-.5 1.2t-1.2.5Zm-6.8-18.5q-.7 0-1.2-.5t-.5-1.2q0-.75.5-1.225.5-.475 1.2-.475h5.1v-5.1q0-.7.5-1.2t1.2-.5q.75 0 1.225.5.475.5.475 1.2v6.8q0 .7-.5 1.2t-1.2.5Zm18.5 18.5q-.75 0-1.225-.5-.475-.5-.475-1.2v-6.8q0-.7.5-1.2t1.2-.5h6.8q.7 0 1.2.5t.5 1.2q0 .75-.5 1.225-.5.475-1.2.475h-5.1v5.1q0 .7-.5 1.2t-1.2.5Zm0-18.5q-.7 0-1.2-.5t-.5-1.2v-6.8q0-.7.5-1.2t1.2-.5q.75 0 1.225.5.475.5.475 1.2v5.1h5.1q.7 0 1.2.5t.5 1.2q0 .75-.5 1.225-.5.475-1.2.475Z"/></svg>
+    </div>
+
+    <div class="main_view">
+        <div id="controls">
+            <div class="controls_line">
+                <label for="volumeSlider">Volume: </label>
+                <input type="range" id="volumeSlider" min="0" max="1" value="0.8" step="any" style="width: 20%;">
+            </div>
+            <span class="multi-range" id="doubleRange">
+                <span class="scroll_thumb" name="move"></span>
+                <input type="range" min="0" max="1" value="0.1" step="any" name="start">
+                <!-- <input type="range" min="0" max="1" value="0.1" step="any" name="move"> -->
+                <input type="range" min="0" max="1" value="0.8" step="any" name="end">
+                <canvas id="range_background_canvas"></canvas>
+            </span>
+        </div>
+
+        <canvas id="frequency_picker"></canvas>
+    </div>
+
+    <div id="frequencyLabel">
+        <!-- <div class="frequency_label">A 440.0</div> -->
+    </div>
+    
+    <script src="scripts/script.js"></script>
+</body>
+</html>

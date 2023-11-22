@@ -541,8 +541,8 @@ volumeSlider.addEventListener('input', () => {
 });
 
 class ToggleFullScreen {
-	get FULLSCREEN_ON() {return 'true'}
-	get FULLSCREEN_OFF() {return 'false'}
+	get FULLSCREEN_ON() { return 'true' }
+	get FULLSCREEN_OFF() { return 'false' }
 	constructor(btnId) {
 		this.buttonId = btnId
 		this.initEventListeners();

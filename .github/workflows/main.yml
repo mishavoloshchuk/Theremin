@@ -3,7 +3,7 @@ name: Copy Theremin Repository
 on:
   push:
     branches:
-      - main  # Change this to the branch you want to trigger the workflow on
+      - main
 
 jobs:
   copy:
@@ -17,7 +17,7 @@ jobs:
         run: mkdir -p Projects_Hub/projects/Theremin
 
       - name: Copy files
-        run: cp -R * Projects_Hub/projects/Theremin
+        run: rsync -av --exclude=Projects_Hub/ * Projects_Hub/projects/Theremin/
 
       - name: Commit and push changes
         run: |

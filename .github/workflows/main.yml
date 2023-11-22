@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'Projects_Hub/**'
+  workflow_dispatch:
 
 jobs:
   copy:

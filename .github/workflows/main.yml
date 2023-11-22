@@ -29,5 +29,4 @@ jobs:
           git config user.email "actions@github.com"
           git add -A
           git commit -m "Copy Theremin repository"
-          git push https://$env:PAT_TOKEN@github.com/mishavoloshchuk/Theremin.git HEAD:main
-
+          git push https://$env:PAT_TOKEN@github.com/mishavoloshchuk/Projects_Hub.git HEAD:main

@@ -14,6 +14,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          repository: Projects_Hub
+          ref: 'master'
+          token:  ${{ secrets.PAT_TOKEN }}
 
       - name: Create destination directory
         run: mkdir -p Projects_Hub/projects/Theremin

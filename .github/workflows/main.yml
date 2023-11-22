@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          repository: "mishavoloshchuk/Projects_Hub"
+          repository: "mishavoloshchuk/Theremin"
           ref: 'master'
           token:  ${{ secrets.PAT_TOKEN }}
 

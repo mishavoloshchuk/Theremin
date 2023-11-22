@@ -1,0 +1,45 @@
+name: Copy Repository on Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  copy_repository:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Projects_Hub
+        uses: actions/checkout@v2
+        with:
+          repository: mishavoloshchuk/Projects_Hub
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: Projects_Hub
+
+      - name: Checkout Theremin
+        uses: actions/checkout@v2
+        with:
+          repository: mishavoloshchuk/Theremin
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: Theremin
+
+      - name: Create projects folder in Projects_Hub if not exists
+        run: |
+          mkdir -p Projects_Hub/projects
+        working-directory: ${{ github.workspace }}
+
+      - name: Copy files from Theremin to Projects_Hub/projects/Theremin
+        run: |
+          cp -r Theremin/. Projects_Hub/projects/Theremin/
+        working-directory: ${{ github.workspace }}
+
+      - name: Commit and push changes
+        run: |
+          cd Projects_Hub
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add .
+          git commit -m "Copy contents from Theremin to projects folder on push"
+          git push origin main
+        working-directory: ${{ github.workspace }}

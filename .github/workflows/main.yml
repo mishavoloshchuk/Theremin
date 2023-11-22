@@ -25,8 +25,9 @@ jobs:
         env: # Set the secret as an input
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          git config user.name "GitHub Actions"
+          git config user.name "mishavoloshcuk"
           git config user.email "actions@github.com"
+          git config user.password "$env:PAT_TOKEN"
           git add -A
           git commit -m "Copy Theremin repository"
-          git push https://$env:PAT_TOKEN@github.com/mishavoloshchuk/Theremin.git HEAD:main
+          git push https://github.com/mishavoloshchuk/Theremin.git HEAD:main

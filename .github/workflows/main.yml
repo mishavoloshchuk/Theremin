@@ -11,28 +11,22 @@ on:
 jobs:
   copy:
     runs-on: ubuntu-latest
+    container: pandoc/latex 
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+      - name: creates output
+        run:  sh ./build.sh
+        
+      - name: Pushes to another repository
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
         with:
-          repository: "mishavoloshchuk/Theremin"
-          ref: 'master'
-          token:  ${{ secrets.PAT_TOKEN }}
-
-      - name: Create destination directory
-        run: mkdir -p Projects_Hub/projects/Theremin
-
-      - name: Copy files
-        run: rsync -av --exclude=Projects_Hub/ * Projects_Hub/projects/Theremin/
-
-      - name: Commit and push changes
-        env: # Set the secret as an input
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add -A
-          git commit -m "Copy Theremin repository"
-          git push https://$env:PAT_TOKEN@github.com/mishavoloshchuk/Projects_Hub.git HEAD:main
+          source-directory: 'output'
+          destination-github-username: 'cpina'
+          destination-repository-name: 'pandoc-test-output'
+          user-email: carles3@pina.cat
+          target-branch: main
 

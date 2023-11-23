@@ -19,7 +19,7 @@ jobs:
         uses: lubu12/copy-files-to-repository@v1
         with:
           # The files/directories to copy to the destination repository. Can have multiple space-separated filenames and globbing
-          source-files: index.html
+          source-files: ./index.html
           # Name of the destination username/organization
           destination-username: mishavoloshchuk
           # Name of the destination repository

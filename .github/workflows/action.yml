@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Copy files from workflow container or repository to another repository
         env:
-          API_TOKEN_GITHUB: '${{ secrets.API_TOKEN_GITHUB }}'
+          API_TOKEN_GITHUB: '${{ secrets.API_TOKEN }}'
         # You may pin to the exact commit or the version.
         # uses: lubu12/copy-files-to-repository@3e2aaabda1807e599bf1c614ff57d3abc3f19aca
         uses: lubu12/copy-files-to-repository@v1

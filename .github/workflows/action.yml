@@ -25,9 +25,7 @@ jobs:
         with:
           path: 'dest'
           ref: 'main'
-          env: 
-            GIT_TERMINAL_PROMPT=1 go get github.com/mishavoloshchuk/ProjectsHub
-          repository: 'mishavoloshchuk/ProjectsHub'
+          repository: 'https://github.com/mishavoloshchuk/ProjectsHub'
           token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
           persist-credentials: true

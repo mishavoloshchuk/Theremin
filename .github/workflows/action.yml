@@ -22,6 +22,7 @@ jobs:
 
       - name: Config
         run: |
+          GIT_TERMINAL_PROMPT=1
           git config --global --add credential.helper manager
 
       - name: Checkout

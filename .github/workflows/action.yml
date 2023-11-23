@@ -24,7 +24,7 @@ jobs:
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_KEY }}
-          known_hosts: 'https://github.com/mishavoloshchuk/Projects_Hub'
+          known_hosts: 'git@github.com:mishavoloshchuk/Projects_Hub'
       - name: rsync over SSH
         run: rsync -r ./foo/ user@remote:bar/
       - name: Config

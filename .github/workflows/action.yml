@@ -10,17 +10,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Mirroring Repository
+      - name: Copy files from workflow container or repository to another repository
         # You may pin to the exact commit or the version.
-        # uses: pixta-dev/repository-mirroring-action@674e65a7d483ca28dafaacba0d07351bdcc8bd75
-        uses: pixta-dev/repository-mirroring-action@v1
+        # uses: lubu12/copy-files-to-repository@3e2aaabda1807e599bf1c614ff57d3abc3f19aca
+        uses: lubu12/copy-files-to-repository@v1
         with:
-          # SSH private key for ssh connection to the target repository
-          ssh_private_key: '${{ secrets.SSH_KEY }}'
-          # Target url
-          target_repo_url: 'https://github.com/mishavoloshchuk/Projects_Hub.git'
-          # Username for ssh connection
-          # ssh_username: # optional, default is git
+          # The files/directories to copy to the destination repository. Can have multiple space-separated filenames and globbing
+          source-files: index.html
+          # Name of the destination username/organization
+          destination-username: mishavoloshchuk
+          # Name of the destination repository
+          destination-repository: Projects_Hub
+          # [Optional] set target branch name for the destination repository
+#          destination-branch: # optional, default is master
+          # [Opitonal] Directory to copy files into in the destination repository
+#          destination-directory: # optional, default is .
+          # [Optional] Username for the commit. Defaults to the destination username
+#          commit-username: # optional, default is 
+          # Email for the commit
+          commit-email: actions@github.com
+          # [Optional] commit message for the output repository. ORIGIN_COMMIT is replaced by the URL@commit in the origin repo
+#          commit-message: # optional, default is Update from ORIGIN_COMMIT
+          # [Optional] Set true if the source files is from the workflow container
+#          from-container: # optional, default is true
+          
           
           
           

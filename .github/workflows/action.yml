@@ -20,10 +20,12 @@ jobs:
           ref: 'main'
           persist-credentials: false
 
+      - name: Config
+        run: |
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+
       - name: Checkout
         uses: actions/checkout@v3
-        env: 
-          GIT_TERMINAL_PROMPT: 1
         with:
           path: 'dest'
           ref: 'main'

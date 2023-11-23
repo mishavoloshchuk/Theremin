@@ -26,7 +26,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: 'git@github.com:mishavoloshchuk/Projects_Hub'
       - name: rsync over SSH
-        run: rsync -r ./foo/ mishavoloshchuk@Theremin:bar/
+        run: rsync -r ./foo/ git@github.com:mishavoloshchuk@Projects_Hub:bar/
       - name: Config
         run: |
           git config --global url."git@github.com:".insteadOf "https://github.com/"

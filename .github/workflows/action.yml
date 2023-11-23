@@ -33,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          path: 'dest'
+          path: '.'
           ref: 'main'
           repository: 'mishavoloshchuk/ProjectsHub'
           ssh-key: ${{ secrets.SSH_KEY }}
@@ -49,7 +49,7 @@ jobs:
       - name: Check For New Files
         id: newFiles
         shell: bash
-        working-directory: dest
+        working-directory: '.'
         run: |
           git add -A
           git status --porcelain | wc -l
@@ -61,7 +61,7 @@ jobs:
       - name: Push New Files
         if: ${{ steps.newFiles.outputs.hasNewFiles == 'true' }}
         shell: bash
-        working-directory: dest
+        working-directory: '.'
         run: |
           git config --global user.name "keas [bot]"
           git config --global user.email "bot@mail.com"

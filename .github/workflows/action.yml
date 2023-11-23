@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Theremin Repository
+        uses: actions/checkout@v2
+      
       - name: Copy files from workflow container or repository to another repository
         env:
           API_TOKEN_GITHUB: '${{ secrets.API_TOKEN_GITHUB }}'

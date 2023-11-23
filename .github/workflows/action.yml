@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
           
       - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
+        uses: shimataro/ssh-key-action@v3
         with:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: 'git@github.com:mishavoloshchuk/ProjectsHub'

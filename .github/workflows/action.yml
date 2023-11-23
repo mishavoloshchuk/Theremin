@@ -33,4 +33,5 @@ jobs:
       #  commit-message: # optional, default is Update from ORIGIN_COMMIT
         # [Optional] Set true if the source files is from the workflow container
       #  from-container: # optional, default is true
+        API_TOKEN_GITHUB: ${{ secrets.PAT_TOKEN }}
           

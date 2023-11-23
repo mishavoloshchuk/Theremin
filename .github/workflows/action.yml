@@ -18,7 +18,7 @@ jobs:
           # SSH private key for ssh connection to the target repository
           ssh_private_key: '${{ secrets.SSH_KEY }}'
           # Target url
-          target_repo_url: 'https://github.com/mishavoloshchuk/Projects_Hub.git'
+          target_repo_url: 'Projects_Hub'
           # Username for ssh connection
           # ssh_username: # optional, default is git
           

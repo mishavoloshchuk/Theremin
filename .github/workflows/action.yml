@@ -20,6 +20,6 @@ jobs:
         # Your GitHub account username
         username: mishavoloshchuk
         # Secret toeken registered in your GitHub Account
-        token_secret: ${{ secrets.PAT_TOKEN }}
+        token_secret: ${{ secrets.API_TOKEN_GITHUB }}
           
           

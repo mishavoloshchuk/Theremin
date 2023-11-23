@@ -25,11 +25,11 @@ jobs:
           # Name of the destination repository
           destination-repository: Projects_Hub
           # [Optional] set target branch name for the destination repository
-          destination-branch: main # optional, default is master
+          destination-branch: 'main' # optional, default is master
           # [Opitonal] Directory to copy files into in the destination repository
 #          destination-directory: # optional, default is .
           # [Optional] Username for the commit. Defaults to the destination username
-#          commit-username: # optional, default is 
+          commit-username: actions_bot # optional, default is 
           # Email for the commit
           commit-email: actions@github.com
           # [Optional] commit message for the output repository. ORIGIN_COMMIT is replaced by the URL@commit in the origin repo

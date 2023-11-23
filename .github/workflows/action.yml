@@ -10,27 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Copy files from workflow container or repository to another repository
+    - name: Sync repositories
       # You may pin to the exact commit or the version.
-      # uses: lubu12/copy-files-to-repository@3e2aaabda1807e599bf1c614ff57d3abc3f19aca
-      uses: lubu12/copy-files-to-repository@v1
+      # uses: somosprte/sync-repositories@613e9ca6b97685e6f0bd731547e6eedfc6b4bd3b
+      uses: somosprte/sync-repositories@0.0.1-ALPHA
       with:
-        # The files/directories to copy to the destination repository. Can have multiple space-separated filenames and globbing
-        source-files: .
-        # Name of the destination username/organization
-        destination-username: mishavoloshchuk
-        # Name of the destination repository
-        destination-repository: Projects_Hub
-        # [Optional] set target branch name for the destination repository
-      #  destination-branch: # optional, default is master
-        # [Opitonal] Directory to copy files into in the destination repository
-        destination-directory: 'projects/Theremin' # optional, default is .
-        # [Optional] Username for the commit. Defaults to the destination username
-      #  commit-username: # optional, default is 
-        # Email for the commit
-        commit-email: 'actions@github.com'
-        # [Optional] commit message for the output repository. ORIGIN_COMMIT is replaced by the URL@commit in the origin repo
-      #  commit-message: # optional, default is Update from ORIGIN_COMMIT
-        # [Optional] Set true if the source files is from the workflow container
-        from-container: true # optional, default is true
+        # Repository to receive data from you repository
+        distination: mishavoloshchuk/Projects_Hub
+        # Your GitHub account username
+        username: mishavoloshchuk
+        # Secret toeken registered in your GitHub Account
+        token_secret: ${{ secrets.PAT_TOKEN }}
+          
           

@@ -16,7 +16,7 @@ jobs:
       uses: somosprte/sync-repositories@0.0.1-ALPHA
       with:
         # Repository to receive data from you repository
-        distination: 'https://github.com/mishavoloshchuk/Projects_Hub'
+        distination: Projects_Hub
         # Your GitHub account username
         username: mishavoloshchuk
         # Secret toeken registered in your GitHub Account

@@ -25,7 +25,10 @@ jobs:
         with:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: 'git@github.com:mishavoloshchuk/Projects_Hub'
-      
+
+      - name: Config
+        run: |
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
 
       - name: Checkout
         uses: actions/checkout@v3

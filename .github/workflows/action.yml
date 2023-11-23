@@ -1,4 +1,4 @@
-            - name: Push repository to another repository
+name: Push repository to another repository
   # You may pin to the exact commit or the version.
   # uses: ArshfaAdmin/push-to-repo@8a1dac7d38dc2d38ad8ff6aa0da239dba8b1440e
   uses: ArshfaAdmin/push-to-repo@v1.0.0
@@ -6,13 +6,13 @@
     # Source before directory from the origin directory
     source-before-directory: # optional
     # Source directory from the origin directory
-    source-directory: .
+    source-directory: 
     # Name of the destination username/organization
-    destination-github-username: mishavoloshchuk
+    destination-github-username: 
     # Destination repository
-    destination-repository-name: ProjectsHub
+    destination-repository-name: 
     # Email for the git commit
-    user-email: voloshchuk123@gmail.com
+    user-email: 
     # Github server
     github-server: # optional, default is github.com
     # [Optional] Name for the git commit. Defaults to the destination username/organization name
@@ -24,7 +24,7 @@
     # [Optional] commit message for the output repository. ORIGIN_COMMIT is replaced by the URL@commit in the origin repo
     commit-message: # optional, default is Update from ORIGIN_COMMIT
     # [Optional] The directory to wipe and replace in the target repository
-    target-directory: 'projects/Theremin' # optional, default is 
+    target-directory: # optional, default is 
     # [Optional] create target branch if not exist. Defaults to `false`
     create-target-branch-if-needed: # optional
           

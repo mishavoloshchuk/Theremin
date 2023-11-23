@@ -22,7 +22,7 @@ jobs:
         uses: lubu12/copy-files-to-repository@v1
         with:
           # The files/directories to copy to the destination repository. Can have multiple space-separated filenames and globbing
-          source-files: index.html
+          source-files: .
           # Name of the destination username/organization
           destination-username: mishavoloshchuk
           # Name of the destination repository
@@ -30,7 +30,7 @@ jobs:
           # [Optional] set target branch name for the destination repository
           destination-branch: main # optional, default is master
           # [Opitonal] Directory to copy files into in the destination repository
-#          destination-directory: # optional, default is .
+          destination-directory: projects/Theremin # optional, default is .
           # [Optional] Username for the commit. Defaults to the destination username
           commit-username: actions_bot # optional, default is 
           # Email for the commit

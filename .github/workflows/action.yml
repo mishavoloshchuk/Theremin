@@ -10,21 +10,49 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  copy-files:
     runs-on: ubuntu-latest
     steps:
-      - name: Pushes to another repository
-        id: push_directory
-        uses: mishavoloshchuk/Projects_Hub@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.PAT_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
-          source-directory: .
-          destination-github-username: 'mishavoloshchuk'
-          destination-repository-name: 'Projects_Hub'
-          user-email: carles3@pina.cat
-          commit-message: See ORIGIN_COMMIT from $GITHUB_REF
-          target-branch: main-does-not-exist
-          create-target-branch-if-needed: true
-      - name: Test get variable exported by push-to-another-repository
-        run: echo $DESTINATION_CLONED_DIRECTORY
+          path: 'src'
+          ref: 'main'
+          persist-credentials: false
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: 'dest'
+          ref: 'main'
+          repository: 'mishavoloshchuk/ProjectsHub'
+          token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Copy common files to new repo
+        shell: bash
+        run: |
+          mkdir -p dest/charts/ingestion/crds
+          cp -rvT scr/ dest/charts/ingestion/crds
+      - name: Check For New Files
+        id: newFiles
+        shell: bash
+        working-directory: dest
+        run: |
+          git add -A
+          git status --porcelain | wc -l
+          if [[ $(gin status --porcelain | wc -l_ -gt 0 ]];
+            echo "::set-output name=hasNewFiles::true"
+          else
+            echo "::set-output name=hasNewFiles::true"
+          fi
+      - name: Push New Files
+        if: ${{ steps.newFiles.outputs.hasNewFiles == 'true' }}
+        shell: bash
+        working-directory: dest
+        run: |
+          git config --global user.name "keas [bot]"
+          git config --global user.email "bot@mail.com"
+          git commit -m "maint: Updated common files"
+          git push

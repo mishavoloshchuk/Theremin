@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Adjust this if you are using a different main branch name
+  workflow_dispatch:
 
 jobs:
   copy_repository:

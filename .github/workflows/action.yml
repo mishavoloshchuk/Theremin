@@ -36,7 +36,7 @@ jobs:
           path: 'dest'
           ref: 'main'
           repository: 'mishavoloshchuk/ProjectsHub'
-          ssh-private-key: ${{ secrets.SSH_KEY }}
+          ssh-key: ${{ secrets.SSH_KEY }}
           token: ${{ secrets.SSH_KEY }}
           fetch-depth: 0
           persist-credentials: true

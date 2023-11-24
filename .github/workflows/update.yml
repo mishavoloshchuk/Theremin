@@ -3,7 +3,7 @@ name: Copy Theremin Repository
 on:
   push:
     branches:
-      - main  # Adjust this if you are using a different main branch name
+      - main
   workflow_dispatch:
 
 jobs:
@@ -13,33 +13,30 @@ jobs:
     steps:
       - name: Checkout Theremin Repository
         uses: actions/checkout@v2
-      
-      - name: Copy files from workflow container or repository to another repository
+
+      - name: Push directory to another repository directory
+        # GitHub access token
         env:
           API_TOKEN_GITHUB: '${{ secrets.API_TOKEN_GITHUB }}'
         # You may pin to the exact commit or the version.
-        # uses: lubu12/copy-files-to-repository@3e2aaabda1807e599bf1c614ff57d3abc3f19aca
-        uses: lubu12/copy-files-to-repository@v1
+        # uses: XenonMolecule/github-action-push-to-another-repository@de389add933e78b040fd9274822bd171ac87b26e
+        uses: XenonMolecule/github-action-push-to-another-repository@0.1.0
         with:
-          # The files/directories to copy to the destination repository. Can have multiple space-separated filenames and globbing
-          source-files: .
+          # Source directory from the origin directory
+          source-directory: .
           # Name of the destination username/organization
-          destination-username: mishavoloshchuk
-          # Name of the destination repository
-          destination-repository: mishavoloshchuk.github.io
-          # [Optional] set target branch name for the destination repository
-          destination-branch: main # optional, default is master
-          # [Opitonal] Directory to copy files into in the destination repository
-          destination-directory: projects/Theremin # optional, default is .
-          # [Optional] Username for the commit. Defaults to the destination username
-          commit-username: actions_bot # optional, default is 
-          # Email for the commit
-          commit-email: actions@github.com
+          destination-github-username: mishavoloshchuk
+          # Destination repository
+          destination-repository-name: mishavoloshchuk.github.io
+          # Email for the git commit
+          user-email: actions@github.com
+          # [Optional] Name for the git commit. Defaults to the destination username/organization name
+          user-name: actions_bot # optional, default is 
+          # [Optional] Username/organization for the destination repository
+          destination-repository-username: mishavoloshchuk # optional, default is 
+          # [Optional] set target branch name for the destination repository. Defaults to "master" for historical reasons
+          target-branch: main # optional, default is master
           # [Optional] commit message for the output repository. ORIGIN_COMMIT is replaced by the URL@commit in the origin repo
 #          commit-message: # optional, default is Update from ORIGIN_COMMIT
-          # [Optional] Set true if the source files is from the workflow container
-#          from-container: # optional, default is true
-          
-          
-          
-          
+          # [Optional] The directory to wipe and replace in the target repository
+          target-directory: projects/Theremin # optional, default is .

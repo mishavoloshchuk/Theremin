@@ -261,9 +261,9 @@ class DoubleRange {
 		document.addEventListener(MOUSE_UP_EVENT, upEventHandler);
 
 		// Set touch event listeners
-		this.rangeMove.addEventListener(TOUCH_START_EVENT, downEventHandler);
-		document.addEventListener(TOUCH_MOVE_EVENT, moveEventHandler);
-		document.addEventListener(TOUCH_END_EVENT, upEventHandler);
+		this.rangeMove.addEventListener(TOUCH_START_EVENT, downEventHandler, {passive: false});
+		document.addEventListener(TOUCH_MOVE_EVENT, moveEventHandler, {passive: false});
+		document.addEventListener(TOUCH_END_EVENT, upEventHandler, {passive: false});
 	}
 
 	#startInput(){

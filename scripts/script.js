@@ -261,9 +261,9 @@ class DoubleRange {
 		document.addEventListener(MOUSE_UP_EVENT, upEventHandler);
 
 		// Set touch event listeners
-		this.rangeMove.addEventListener(TOUCH_START_EVENT, downEventHandler, {passive: false});
-		document.addEventListener(TOUCH_MOVE_EVENT, moveEventHandler, {passive: false});
-		document.addEventListener(TOUCH_END_EVENT, upEventHandler, {passive: false});
+		this.rangeMove.addEventListener(TOUCH_START_EVENT, downEventHandler);
+		document.addEventListener(TOUCH_MOVE_EVENT, moveEventHandler);
+		document.addEventListener(TOUCH_END_EVENT, upEventHandler);
 	}
 
 	#startInput(){
@@ -391,6 +391,13 @@ const dRange = new DoubleRange('doubleRange', {
 });
 const rangeBackground = new LogGrid(document.getElementById('range_background_canvas'), {begin: dRange.min, end: dRange.max});
 rangeBackground.renderNotes();
+
+// Volume
+volumeSlider.addEventListener('input', () => {
+	waveGen.setVolume(volumeSlider.value);
+	sessionStorage.setItem('globalVolume', volumeSlider.value);
+});
+volumeSlider.value = sessionStorage.getItem('globalVolume') || volumeSlider.value;
 
 const waveGen = new WaveGenerator({min: dRange.min, max: dRange.max});
 
@@ -533,11 +540,6 @@ window.addEventListener("keyup", (e) => {
 		waveGen.stopWave(DEFAULT_AUDIO_ID);
 		break;
 	}
-});
-
-// Volume
-volumeSlider.addEventListener('input', () => {
-	waveGen.setVolume(volumeSlider.value);
 });
 
 class ToggleFullScreen {
